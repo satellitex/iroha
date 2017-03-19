@@ -15,18 +15,14 @@ limitations under the License.
 */
 
 #include <iostream>
-#include <string>
 #include <vector>
 #include <memory>
 #include <thread>
 
 #include <consensus/sumeragi.hpp>
-#include <consensus/connection/connection.hpp>
 
-#include <service/peer_service.hpp>
-#include <crypto/hash.hpp>
 #include <infra/config/peer_service_with_json.hpp>
-#include<service/peer_service.hpp>
+#include "../../tools/helper/issue_transaction_add.hpp"
 
 
 void setAwkTimer(int const sleepMillisecs, std::function<void(void)> const &action) {
@@ -41,8 +37,14 @@ int main(){
 
     std::string pubKey = ::peer::myself::getPublicKey();
 
+    int i = 0;
     while(1){
-        setAwkTimer(3000, [&](){
+        setAwkTimer(30, [&i]() {
+            std::string command = "add";
+            std::string data = "domain";
+            std::vector<std::string> params {"domain " + std::to_string(i), "key " + std::to_string(i)};
+            tools::issue_transaction::add::domain::issue_transaction(params);
+            ++i;
         });
     }
 

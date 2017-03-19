@@ -14,7 +14,7 @@ add_subdirectory(infra/config)
 add_subdirectory(infra/virtual_machine)
 # commented because these tests do nothing
 # TODO: make them do something :)
-# add_subdirectory(consensus) 
+add_subdirectory(consensus)
 add_subdirectory(vendor)
 add_subdirectory(validation)
 add_subdirectory(connection)
