@@ -293,6 +293,10 @@ bool add(const peer::Node &peer) {
     logger::warning("addPeer") << e.what();
     return false;
   }
+  logger::info("add peer") << peer.ip << "  " << peer.publicKey;
+  for (auto p: peerList) {
+    logger::info("peer: ") << p.ip << "  " << p.publicKey;
+  }
   return true;
 }
 bool remove(const std::string &publicKey) {
