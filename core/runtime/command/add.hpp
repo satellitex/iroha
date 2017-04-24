@@ -20,7 +20,7 @@ limitations under the License.
 #include <generated/commands_generated.h>
 
 namespace runtime{
-    namespace command{
+    namespace add{
         // iroha::AccountAdd
         std::function<Expected<int>(const void*,const std::string&)> accountAdd =
             [](const void* aAccountAdd, const std::string& creator){

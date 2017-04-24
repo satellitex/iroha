@@ -20,6 +20,18 @@ limitations under the License.
 
 namespace runtime{
 
+    static std::map<iroha::Command, std::function<Expected<int>(const void*,const std::string&)>>
+        command_process;
+
+    void initialize(){
+        {
+            command_process[iroha::Command::Command_AccountAdd] = add::accountAdd;
+            command_process[iroha::Command::Command_AssetAdd] = add::assetAdd;
+            command_process[iroha::Command::Command_ChaincodeAdd] = add::chaincodeAdd;
+            command_process[iroha::Command::Command_PeerAdd] = add::peerAdd;
+        }
+    }
+
     void processTransaction(const iroha::Transaction& tx){
         if(!validator::account_exist_validator(tx)){
             // Reject
@@ -31,6 +43,9 @@ namespace runtime{
             // Reject
         }
 
+        if(command_process.count(tx.command_type()) != 0){
+             command_process[tx.command_type()](tx.command(),tx.creatorPubKey()->c_str());
+        }
     }
 
 };
