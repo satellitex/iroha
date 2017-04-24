@@ -17,6 +17,7 @@ limitations under the License.
 #include "validator.hpp"
 
 #include "command/add.hpp"
+#include "command/create.hpp"
 
 namespace runtime{
 
@@ -24,11 +25,16 @@ namespace runtime{
         command_process;
 
     void initialize(){
+        // Add
         {
             command_process[iroha::Command::Command_AccountAdd] = add::accountAdd;
             command_process[iroha::Command::Command_AssetAdd] = add::assetAdd;
             command_process[iroha::Command::Command_ChaincodeAdd] = add::chaincodeAdd;
             command_process[iroha::Command::Command_PeerAdd] = add::peerAdd;
+        }
+        // Create
+        {
+            command_process[iroha::Command::Command_AssetCreate] = create::assetCreate;
         }
     }
 
