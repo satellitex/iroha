@@ -19,9 +19,12 @@ limitations under the License.
 #include "command/add.hpp"
 #include "command/create.hpp"
 #include "command/remove.hpp"
+#include "command/transfer.hpp"
+
 namespace runtime{
 
-    static std::map<iroha::Command, std::function<Expected<int>(const void*,const std::string&)>>
+    static std::map<iroha::Command, std::function<Expected<int>
+            (const void*,const std::string&)>>
         command_process;
 
     void initialize(){
@@ -43,6 +46,10 @@ namespace runtime{
             command_process[iroha::Command::Command_ChaincodeRemove] = remove::chaincodeRemove;
             command_process[iroha::Command::Command_PeerRemove] = remove::peerRemove;
         }
+        // Transfer
+        {
+            command_process[iroha::Command::Command_AssetTransfer] = transfer::assetTransfer;
+        }
     }
 
     void processTransaction(const iroha::Transaction& tx){
@@ -57,7 +64,8 @@ namespace runtime{
         }
 
         if(command_process.count(tx.command_type()) != 0){
-             command_process[tx.command_type()](tx.command(),tx.creatorPubKey()->c_str());
+            command_process[tx.command_type()](tx.command(),tx.creatorPubKey()->c_str());
+            return;
         }
     }
 
