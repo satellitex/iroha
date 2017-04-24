@@ -16,11 +16,35 @@ limitations under the License.
 #ifndef IROHA_ADD_H
 #define IROHA_ADD_H
 
+#include <functional>
+#include <generated/commands_generated.h>
+
 namespace runtime{
     namespace command{
-        void add(){
+        // iroha::AccountAdd
+        std::function<Expected<int>(const void*,const std::string&)> accountAdd =
+            [](const void* aAccountAdd, const std::string& creator){
+                return 0;
+            };
 
-        }
+        // iroha::AssetAdd
+        std::function<Expected<int>(const void*,const std::string&)> assetAdd =
+            [](const void* aAssetAdd,const std::string& creator){
+            return 0;
+        };
+
+        // iroha::ChaincodeAdd
+        std::function<Expected<int>(const void*,const std::string&)> chaincodeAdd =
+            [](const void* aChaincodeAdd,const std::string& creator){
+                return 0;
+            };
+
+        // iroha::PeerAdd
+        std::function<Expected<int>(const void*,const std::string&)> peerAdd =
+            [](const void* aPeerAdd,const std::string& creator){
+                return 0;
+            };
+
     };
 };
 #endif //IROHA_ADD_H
