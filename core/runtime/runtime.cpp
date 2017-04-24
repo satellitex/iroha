@@ -18,7 +18,7 @@ limitations under the License.
 
 #include "command/add.hpp"
 #include "command/create.hpp"
-
+#include "command/remove.hpp"
 namespace runtime{
 
     static std::map<iroha::Command, std::function<Expected<int>(const void*,const std::string&)>>
@@ -35,6 +35,13 @@ namespace runtime{
         // Create
         {
             command_process[iroha::Command::Command_AssetCreate] = create::assetCreate;
+        }
+        // Remove
+        {
+            command_process[iroha::Command::Command_AccountRemove] = remove::accountRemove;
+            command_process[iroha::Command::Command_AssetRemove] = remove::assetRemove;
+            command_process[iroha::Command::Command_ChaincodeRemove] = remove::chaincodeRemove;
+            command_process[iroha::Command::Command_PeerRemove] = remove::peerRemove;
         }
     }
 
