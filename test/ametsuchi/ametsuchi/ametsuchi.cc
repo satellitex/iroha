@@ -69,17 +69,16 @@ TEST_F(Ametsuchi_Test, AssetTest) {
 
   {
     flatbuffers::FlatBufferBuilder fbb2(2048);
-    auto reference_tx = flatbuffers::GetRoot<iroha::Transaction>(generator::random_transaction(
+
+    auto tx = generator::random_transaction(
         fbb2, iroha::Command::Transfer,
-        generator::random_Transfer(
-            fbb2,
-            generator::random_asset_wrapper_currency(100,
-                                                     0,
-                                                     "Dollar",
-                                                     "USA",
-                                                     "l1"),
-            "1", "2").Union()
-    ).data())->command_as_Transfer();
+        generator::random_Transfer(fbb2,
+                                   generator::random_asset_wrapper_currency(
+                                       100, 0, "Dollar", "USA", "l1"),
+                                   "1", "2")
+            .Union());
+    auto reference_tx = flatbuffers::GetRoot<iroha::Transaction>(tx.data())->command_as_Transfer();
+
 
     auto reference_1 = reference_tx->sender();
     auto reference_ln = reference_tx->asset_nested_root()->asset_as_Currency()->ledger_name();
@@ -107,7 +106,7 @@ TEST_F(Ametsuchi_Test, AssetTest) {
 
   {
     flatbuffers::FlatBufferBuilder fbb2(2048);
-    auto reference_tx = flatbuffers::GetRoot<iroha::Transaction>(generator::random_transaction(
+    auto tx = generator::random_transaction(
         fbb2, iroha::Command::Transfer,
         generator::random_Transfer(
             fbb2,
@@ -117,7 +116,11 @@ TEST_F(Ametsuchi_Test, AssetTest) {
                                                      "USA",
                                                      "l1"),
             "1", "2").Union()
-    ).data())->command_as_Transfer();
+    );
+
+
+    auto reference_tx = flatbuffers::GetRoot<iroha::Transaction>(tx.data())->command_as_Transfer();
+
     auto reference_1 = reference_tx->sender();
     auto reference_2 = reference_tx->receiver();
     auto reference_ln = reference_tx->asset_nested_root()->asset_as_Currency()->ledger_name();
@@ -130,5 +133,5 @@ TEST_F(Ametsuchi_Test, AssetTest) {
     auto asset2 = ametsuchi_.accountGetAsset(reference_2, reference_ln, reference_dn, reference_cn, true);
     ASSERT_EQ(asset2->asset_as_Currency()->amount()->str(), "100");
   }
-  //ametsuchi_.commit();
+  ametsuchi_.commit();
 }
