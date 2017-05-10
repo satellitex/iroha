@@ -86,7 +86,9 @@ TEST_F(Ametsuchi_Test, AssetTest) {
     auto reference_cn = reference_tx->asset_nested_root()->asset_as_Currency()->currency_name();
 
     auto asset1 = ametsuchi_.accountGetAsset(reference_1, reference_ln, reference_dn, reference_cn, true);
-    EXPECT_EQ(asset1->asset_as_Currency()->amount()->str(), "345");
+    auto asset_as_currency = asset1->asset_as_Currency();
+    auto amount = asset_as_currency->amount();
+    EXPECT_EQ(amount->str(), "345");
   }
 
 
