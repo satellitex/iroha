@@ -14,6 +14,11 @@ table AccountRemove {
     pubkey: string;
 }
 
+table AccountSetAlias {
+	account:	string	(required);
+	alias:	string	(required);
+}
+
 // Suggest account -> pubkey in below three commands.
 table AccountAddSignatory {
     account:   string   (required);
@@ -92,7 +97,6 @@ table AssetCreate {
     asset_name:  string (required);
     domain_name: string (required);
     ledger_name: string (required);
-    amount:      string (required);
     description: string;
 }
 
@@ -101,6 +105,14 @@ table AssetRemove {
     domain_name: string (required);
     ledger_name: string (required);
 }
+
+table AssetSetDescription {
+	ledger_name:	string(required);
+	domain_name:	string(required);
+	asset_name:	string(required);
+	description:		string(required);
+}
+
 //////////////////////////////////////////
 
 
@@ -163,6 +175,7 @@ union Command {
 // Use for meta operate in domain
     AssetCreate,
     AssetRemove,
+    AssetSetDescription,
 
 // Use for peer operate
     PeerAdd,
@@ -174,6 +187,7 @@ union Command {
 // Use for account operate
     AccountAdd,
     AccountRemove,
+    AccountSetAlias,
     AccountAddSignatory,
     AccountRemoveSignatory,
     AccountSetQuorum,

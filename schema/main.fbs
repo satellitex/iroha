@@ -19,13 +19,6 @@ table TransactionWrapper {
   tx: [ubyte] (nested_flatbuffer: "Transaction");
 }
 
-// Can't consensus Is it OK?
-table TransactionResponse {
-  message:              string  (required);
-  index:                ulong;
-  code:                 Code;
-  transactions:         [Transaction];
-}
 
 table ReceiverConfirmation {
   signature: Signature;

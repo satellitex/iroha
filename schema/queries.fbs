@@ -1,32 +1,90 @@
-table AssetQuery{
- pubKey:      string	(required); // アカウントのpubkey
- ledger_name: string	(required);
- domain_name: string	(required);
- asset_name:  string	(required);
+
+table AccountQuery {
+pubkey:
+  string(required);
+}
+table AccountResponse {
+account:
+  Account;
+}
+
+table AccountSignatoriesQuery {
+pubkey:
+  string(required);
+}
+table AccountSignatoriesResponse {
+signatories:
+  [string];
+}
+
+
+table AssetQuery {
+pubkey:
+  string(required);
+ledger_name:
+  string(required);
+domain_name:
+  string(required);
+asset_name:
+  string(required);
 }
 
 table AssetResponse {
- message:      string  (required);
- code:         Code    (required);
- assets:       Asset;
-}
-
-table AccountQuery{
- pubKey:   string  (required); // 取得したいAccountのpubkey
-}
-
-table AccountResponse {
- message:    string  (required);
- code:       Code  (required);
- account:    Account;
+assets:
+  Asset;
 }
 
 
-union QueryCommand { AssetQuery, AccountQuery };
-union Response { AssetResponse, AccountResponse };
+table TransactionQuery {
+pubkey:
+  string(required);
+command_type:
+  short;
+ledger_name:
+  string;  // option
+domain_name:
+string:  // option
+asset_name:
+  string;  // option
+offset:
+  int;  // option
+order:
+  int:  // option
+}
+
+table TransactionResponse {
+message:
+  string(required);
+code:
+  Code;
+transactions:
+  [Transaction];
+}
+
+union QueryCommand {
+  AssetQuery, AccountQuery, AccountSignatoriesQuery, TransactionQuery
+};
+
+union ResponseCommand {
+  AssetResponse, AccountResponse, AccountSignatoriesResponse,
+      TransactionResponse
+};
 
 table Query {
-creatorPubkey:	string	(required);
-query	:	QueryCommand	(required);
-uncommitted:	bool;
+creator_pubkey:
+  string(required);
+query:
+  QueryCommand(required);
+is_committed:
+  bool;
+}
+
+
+table QueryResponse {
+message:
+  string(required);
+code:
+  Code(required);
+response:
+  ResponseCommand(required);
 }

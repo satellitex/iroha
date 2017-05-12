@@ -5,7 +5,6 @@ namespace iroha;
 file_identifier "IROH";
 file_extension  "iroha";
 
-//[WIP] NAME is YABAI
 table Response {
   message:   string;
   code:      Code;
