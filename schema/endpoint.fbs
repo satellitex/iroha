@@ -5,6 +5,7 @@ namespace iroha;
 file_identifier "IROH";
 file_extension  "iroha";
 
+//[WIP] NAME is YABAI
 table Response {
   message:   string;
   code:      Code;
@@ -28,19 +29,7 @@ table PeersResponse {
   sender:     string;
 }
 
-table AssetQuery{
-  pubKey:      string;
-  ledger_name: string;
-  domain_name: string;
-  asset_name:  string;
-  uncommitted:   bool;
-}
 
-table AssetResponse {
-  message:      string  (required);
-  code:         Code;
-  assets:       [Asset];
-}
 
 // Used by sending transaction
 rpc_service Sumeragi {

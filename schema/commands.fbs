@@ -25,9 +25,9 @@ table AccountRemoveSignatory {
     signatory: [string] (required);
 }
 
-table AccountSetUseKeys {
+table AccountSetQuorum {
     accounts: [string] (required);
-    useKeys:  ushort;
+    quorum:  ushort;
 }
 
 // used by root, It is needed private key lost. Register new key-pair
@@ -176,7 +176,7 @@ union Command {
     AccountRemove,
     AccountAddSignatory,
     AccountRemoveSignatory,
-    AccountSetUseKeys,
+    AccountSetQuorum,
     AccountMigrate,
 
     ChaincodeAdd,

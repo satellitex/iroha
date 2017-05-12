@@ -1,0 +1,32 @@
+table AssetQuery{
+ pubKey:      string	(required); // アカウントのpubkey
+ ledger_name: string	(required);
+ domain_name: string	(required);
+ asset_name:  string	(required);
+}
+
+table AssetResponse {
+ message:      string  (required);
+ code:         Code    (required);
+ assets:       Asset;
+}
+
+table AccountQuery{
+ pubKey:   string  (required); // 取得したいAccountのpubkey
+}
+
+table AccountResponse {
+ message:    string  (required);
+ code:       Code  (required);
+ account:    Account;
+}
+
+
+union QueryCommand { AssetQuery, AccountQuery };
+union Response { AssetResponse, AccountResponse };
+
+table Query {
+creatorPubkey:	string	(required);
+query	:	QueryCommand	(required);
+uncommitted:	bool;
+}

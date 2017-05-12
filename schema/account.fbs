@@ -6,13 +6,12 @@ namespace iroha;
 
 table Account {
   pubKey: string (required);  // primary key for account
-  prevPubKey: string (required);    // pubkey for account before migrate account
-  alias:  string;
+  alias:  string (required);
 
   // for m-n multisignature scheme
   // signatories.size() = n, useKeys = m
   signatories: [string]; // signatories are for multisig
-  useKeys:     ushort = 1;
+  quorum:     ushort = 1;
 
   root:                 AccountPermissionRoot;
   ledgerPermissions:    [AccountPermissionLedgerWrapper];
