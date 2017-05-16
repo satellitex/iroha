@@ -14,8 +14,8 @@ Please see the [**wiki**](https://github.com/hyperledger/iroha/wiki) for informa
 Please include a developer certificate with pull requests: https://www.clahub.com/agreements/hyperledger/iroha
 
 # Documentation
- - [Architecture](./docs/architecture.md)
- - [Build iroha in local environment](./docs/how_to_build.rst)
+ - [Architecture](https://github.com/hyperledger/iroha/wiki/Project-structure)
+ - [Developer's Guide](https://github.com/hyperledger/iroha/wiki/Developer's-Guide)
  - [Using docker to build iroha container](./docker/README.md)
  - [Deploying a network of N nodes](./docs/iroha_network.md)
 
