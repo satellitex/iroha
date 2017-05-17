@@ -35,12 +35,12 @@ iroha-dev:
 iroha-build:
 	docker run -t --rm --name iroha-build \
 	  -v $(IROHA_HOME):/opt/iroha \
-	  hyperledger/iroha-dev /opt/iroha/build/scripts/iroha-build.sh
+	  hyperledger/iroha-dev ${IROHA_HOME}/docker/scripts/iroha-build.sh
 
 iroha:
 	rm -fr docker/tiny/release
 	rsync -av ${IROHA_HOME}/build/release docker/tiny
-	docker build --rm -t hyperledger/iroha docker/tiny
+	docker build --rm -t hyperledger/iroha:${TAG} docker/tiny
 
 clean:
 	rm -fr build external docker/tiny/release
