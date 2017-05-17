@@ -1,6 +1,7 @@
 FROM ubuntu:16.04
 
-ENV IROHA_HOME=/usr/local/iroha
+#ENV IROHA_HOME=/usr/local/iroha
+ENV IROHA_HOME=/iroha
 ENV LD_LIBRARY_PATH=${IROHA_HOME}/lib
 
 COPY release ${IROHA_HOME}
