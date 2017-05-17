@@ -96,6 +96,7 @@ jobs:
       - run:
           name: build and push hyperledger/iroha-docker:$CIRCLE_BRANCH image
           command: |
+            IROHA_HOME=/opt/iroha
             # replace all invalid characters to dots
             TAG=$(echo $CIRCLE_BRANCH | sed "s/[^a-zA-Z0-9_\-\.]/./g")
             export TAG=$TAG 
