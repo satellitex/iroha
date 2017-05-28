@@ -115,7 +115,10 @@ std::vector<std::string> getIpList() {
 
 // is exist which peer?
 bool isExistIP(const std::string &ip) {
-  return findPeerIP(ip) != peerList.end();
+  // findPeerIP() initializes peers os it MUST be called before comparison to
+  // peerList.end()
+  auto peer = findPeerIP(ip);
+  return peer != peerList.end();
 }
 
 bool isExistPublicKey(const std::string &publicKey) {
@@ -161,10 +164,11 @@ void remove(const std::string &ip, const std::string &publicKey) {
   if (!service::isExistPublicKey(publicKey)) return;
 
   flatbuffers::FlatBufferBuilder xbb;
-  auto peerRemove = flatbuffer_service::peer::CreateRemove(xbb,publicKey);
+  auto peerRemove = flatbuffer_service::peer::CreateRemove(xbb, publicKey);
 
   auto txbuf = flatbuffer_service::transaction::CreateTransaction(
-      xbb, myself::getPublicKey(), iroha::Command::PeerRemove, peerRemove.Union());
+      xbb, myself::getPublicKey(), iroha::Command::PeerRemove,
+      peerRemove.Union());
   auto &tx = *flatbuffers::GetRoot<::iroha::Transaction>(txbuf.data());
   connection::memberShipService::SumeragiImpl::Torii::send(ip, tx);
 }
@@ -174,10 +178,12 @@ void setTrust(const std::string &ip, const std::string &publicKey,
   if (!service::isExistPublicKey(publicKey)) return;
 
   flatbuffers::FlatBufferBuilder xbb;
-  auto peerSetTrust = flatbuffer_service::peer::CreateSetTrust(xbb,publicKey,trust);
+  auto peerSetTrust =
+      flatbuffer_service::peer::CreateSetTrust(xbb, publicKey, trust);
 
   auto txbuf = flatbuffer_service::transaction::CreateTransaction(
-      xbb, myself::getPublicKey(), iroha::Command::PeerSetTrust, peerSetTrust.Union());
+      xbb, myself::getPublicKey(), iroha::Command::PeerSetTrust,
+      peerSetTrust.Union());
   auto &tx = *flatbuffers::GetRoot<::iroha::Transaction>(txbuf.data());
   connection::memberShipService::SumeragiImpl::Torii::send(ip, tx);
 }
@@ -186,10 +192,12 @@ void changeTrust(const std::string &ip, const std::string &publicKey,
   if (!service::isExistPublicKey(publicKey)) return;
 
   flatbuffers::FlatBufferBuilder xbb;
-  auto peerChangeTrust = flatbuffer_service::peer::CreateChangeTrust(xbb,publicKey,trust);
+  auto peerChangeTrust =
+      flatbuffer_service::peer::CreateChangeTrust(xbb, publicKey, trust);
 
   auto txbuf = flatbuffer_service::transaction::CreateTransaction(
-      xbb, myself::getPublicKey(), iroha::Command::PeerChangeTrust, peerChangeTrust.Union());
+      xbb, myself::getPublicKey(), iroha::Command::PeerChangeTrust,
+      peerChangeTrust.Union());
   auto &tx = *flatbuffers::GetRoot<::iroha::Transaction>(txbuf.data());
   connection::memberShipService::SumeragiImpl::Torii::send(ip, tx);
 }
@@ -198,10 +206,12 @@ void setActive(const std::string &ip, const std::string &publicKey,
   if (!service::isExistPublicKey(publicKey)) return;
 
   flatbuffers::FlatBufferBuilder xbb;
-  auto peerSetActive = flatbuffer_service::peer::CreateSetActive(xbb,publicKey,active);
+  auto peerSetActive =
+      flatbuffer_service::peer::CreateSetActive(xbb, publicKey, active);
 
   auto txbuf = flatbuffer_service::transaction::CreateTransaction(
-      xbb, myself::getPublicKey(), iroha::Command::PeerSetActive, peerSetActive.Union());
+      xbb, myself::getPublicKey(), iroha::Command::PeerSetActive,
+      peerSetActive.Union());
   auto &tx = *flatbuffers::GetRoot<::iroha::Transaction>(txbuf.data());
   connection::memberShipService::SumeragiImpl::Torii::send(ip, tx);
 }
