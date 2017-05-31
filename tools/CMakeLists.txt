@@ -7,11 +7,11 @@ SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 ###########################
 
 add_executable(test_sumeragi
-    test_sumeragi.cpp
+  test_sumeragi.cpp
 )
 
 target_link_libraries(test_sumeragi
-    connection_with_grpc_flatbuffer
+  connection_with_grpc_flatbuffer
 )
 
 ###########################
@@ -19,11 +19,11 @@ target_link_libraries(test_sumeragi
 ###########################
 
 add_executable(check_ametsuchi
-    check_ametsuchi.cpp
+  check_ametsuchi.cpp
 )
 
 target_link_libraries(check_ametsuchi
-    connection_with_grpc_flatbuffer
+  connection_with_grpc_flatbuffer
 )
 
 ###########################
@@ -46,9 +46,28 @@ target_link_libraries(make_sumeragi
 ###########################
 
 add_executable(add_peer
-    add_peer.cpp
+  add_peer.cpp
 )
 
 target_link_libraries(add_peer
-    membership_service
+  membership_service
+)
+
+
+###########################
+#     make_hostdiscover   #
+###########################
+
+add_executable(make_hostdiscover
+  make_hostdiscover.cpp
+)
+
+target_link_libraries(make_hostdiscover
+  flatbuffers
+  grpc
+  connection_with_grpc_flatbuffer
+  repository
+  endpoint_fbs
+  membership_service
+  flatbuffer_service
 )

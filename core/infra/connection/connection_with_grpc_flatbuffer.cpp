@@ -407,7 +407,7 @@ namespace connection {
     explicit HijiriConnectionClient(std::shared_ptr<Channel> channel)
         : stub_(Hijiri::NewStub(channel)) {}
 
-    void Kagami(const ::iroha::Ping &ping,
+    bool Kagami(const ::iroha::Ping &ping,
                 flatbuffers::BufferRef<Response> *responseRef) const {
       ::grpc::ClientContext clientContext;
       flatbuffers::FlatBufferBuilder fbbPing;
@@ -420,16 +420,18 @@ namespace connection {
           fbbPing.GetBufferPointer(), fbbPing.GetSize());
 
       auto res = stub_->Kagami(&clientContext, reqPingRef, responseRef);
-      ;
+
       logger::info("connection") << "Send!";
 
       if (res.ok()) {
         logger::info("HijiriConnectionClient") << "gRPC OK";
+
       } else {
         logger::error("HijiriConnectionClient")
-            << "gRPC CANCELLED" << static_cast<int>(res.error_code()) << ": "
+            << "gRPC CANCELLED " << static_cast<int>(res.error_code()) << ": "
             << res.error_message();
       }
+      return res.ok();
     }
 
    private:
@@ -481,7 +483,7 @@ namespace connection {
   namespace memberShipService {
     namespace HijiriImpl {
       namespace Kagami {
-        bool send(const std::string &ip, const ::iroha::Ping &ping) {  // TODO
+        bool send(const std::string &ip, const ::iroha::Ping &ping, std::string &pubkey) {  // TODO
           logger::info("connection") << "Send!";
           logger::info("connection") << "IP is: " << ip;
           HijiriConnectionClient client(grpc::CreateChannel(
@@ -491,9 +493,12 @@ namespace connection {
               grpc::InsecureChannelCredentials()));
 
           flatbuffers::BufferRef<Response> response;
-          client.Kagami(ping, &response);
-          auto reply = response.GetRoot();
-          return true;
+          if (client.Kagami(ping, &response)) {
+            auto reply = response.GetRoot();
+            pubkey = reply->signature()->publicKey()->str();
+            return true;
+          }
+          return false;
         }
       }  // namespace Kagami
     }    // namespace HijiriImpl
@@ -923,11 +928,11 @@ namespace connection {
                it++) {
             std::cout << "ip: " << it->ip()->c_str() << std::endl;
             std::cout << "pubkey: " << it->publicKey()->c_str() << std::endl;
-            std::cout << "leadger: " << it->ledger_name()->c_str() << std::endl;
+            std::cout << "ledger: " << it->ledger_name()->c_str() << std::endl;
             std::string ip = it->ip()->c_str();
             std::string pubkey = it->publicKey()->c_str();
-            std::string lerger = it->ledger_name()->c_str();
-            auto p = ::peer::Node(ip, pubkey, lerger, it->trust(), it->active(),
+            std::string ledger = it->ledger_name()->c_str();
+            auto p = ::peer::Node(ip, pubkey, ledger, it->trust(), it->active(),
                                   it->join_ledger());
             if (::peer::transaction::validator::add(p))
               ::peer::transaction::executor::add(p);
@@ -982,11 +987,13 @@ namespace connection {
     SumeragiConnectionServiceImpl service;
     AssetRepositoryConnectionServiceImpl service_asset;
     SyncConnectionServiceImpl service_sync;
+    HijiriConnectionServiceImpl hijiriConnectionService;
     grpc::ServerBuilder builder;
     builder.AddListeningPort(address, grpc::InsecureServerCredentials());
     builder.RegisterService(&service);
     builder.RegisterService(&service_asset);
     builder.RegisterService(&service_sync);  // TODO WIP Is it OK?
+    builder.RegisterService(&hijiriConnectionService);
 
     {
       std::lock_guard<std::mutex> lk(wait_for_server);

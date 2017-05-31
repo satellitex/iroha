@@ -66,20 +66,6 @@ namespace Torii {
 using CallBackFunc = std::function<void(
     const std::string& /* from */, flatbuffers::unique_ptr_t&& /* message */)>;
 void receive(Torii::CallBackFunc&& callback);
-/*
-namespace HostDiscovery {
-    namespace getHostInfo {
-        bool receive(const std::function<void(
-                const std::string &,
-                DiscoverRequest &)> &callback
-        );
-        Peer send(
-                const std::string &ip,
-                const DiscoverRequest &message
-        );
-    }
-}
-}*/
 }
 }
 }  // namespace iroha::SumeragiImpl::Verify
@@ -101,7 +87,7 @@ void receive(AccountGetAsset::CallBackFunc&& callback);
 namespace memberShipService {
 namespace HijiriImpl {
 namespace Kagami {
-bool send(const std::string& ip, const ::iroha::Ping& ping);
+bool send(const std::string& ip, const ::iroha::Ping& ping, std::string &pubkey);
 }  // namespace Kagami
 }  // namespace HijiriImpl
 namespace SumeragiImpl {
