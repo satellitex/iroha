@@ -36,6 +36,7 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include <map>
 
 struct Block {
   std::vector<uint8_t> tx;
@@ -174,7 +175,8 @@ void remove_if_exists(std::string const& path) {
   }
 }
 
-void dump(std::string const& path, std::string const& item_name) {
+void output_csv(std::string const& path,
+                std::vector<std::string> const& item_names) {
 
   std::fstream fs(path);
   std::string line;
@@ -187,26 +189,40 @@ void dump(std::string const& path, std::string const& item_name) {
     }
   }
 
-  std::vector<std::tuple<int, int64_t>> items;
+  std::map<int, std::map<std::string, int64_t>> items;
+
   int curr = 0;
 
-  for (size_t i = 0; i < buf.size(); i++) {
+  for (size_t i = 1; i < buf.size(); i += 3) {
     for (size_t j = 0; j < buf[i].size(); j++) {
-      if (buf[i][j] == item_name) {
-        assert(i + 1 < buf.size());
-        items.emplace_back(curr++, std::stoll(buf[i + 1][j]));
+      for (auto const& item_name: item_names) {
+        if (buf[i][j] == item_name) {
+          assert(i + 1 < buf.size());
+          items[i / 3][item_name] = std::stoll(buf[i + 1][j]);
+        }
       }
     }
   }
 
-  auto items_path = path + "-" + item_name;
+  auto items_path = path + ".csv";
   remove_if_exists(items_path);
 
-  std::cout << "output '" << item_name << "' CSV: " << items_path << std::endl;
+  std::cout << "output CSV: " << items_path << std::endl;
   std::ofstream out(items_path);
 
-  for (auto const& e: items) {
-    out << std::get<0>(e) << "," << std::get<1>(e) << std::endl;
+  out << "time";
+  for (auto const& item: item_names)
+    out << "," << item;
+  out << std::endl;
+
+  for (auto& row: items) {
+    auto index = row.first;
+    auto& value = row.second;
+    out << index;
+    for (auto const& item_name: item_names) {
+      out << "," << value[item_name];
+    }
+    out << std::endl;
   }
 }
 
@@ -258,16 +274,21 @@ int main(int argc, char** argv) {
   std::atomic_bool vmstat_alive(true);
   std::thread vmstat_logger([&vmstat_alive, &command, Interval]{
     const std::chrono::milliseconds interval(Interval);
-    while (vmstat_alive.load()) {
-      auto start = std::chrono::system_clock::now();
 
-      // Outputs vmstat while running.
-      system(command.c_str());
-      auto end = std::chrono::system_clock::now();
+    // prevent from recording at 0 sec.
+    auto start = std::chrono::system_clock::now();
+    auto end = std::chrono::system_clock::now();
+
+    while (vmstat_alive.load()) {
       auto wasted = end - start;
-      if (wasted < interval){
+      if (wasted < interval) {
         std::this_thread::sleep_for(interval - wasted);
       }
+
+      start = std::chrono::system_clock::now();
+      // Outputs vmstat while running.
+      system(command.c_str());
+      end = std::chrono::system_clock::now();
     }
   });
 
@@ -298,9 +319,7 @@ int main(int argc, char** argv) {
   std::cout << "output vmstat: " << path << "\n";
 
   // Outputs item list
-  dump(path, "free");
-  dump(path, "buff");
-  dump(path, "cache");
+  output_csv(path, {"free", "buff", "cache"});
 
   return 0;
 }
