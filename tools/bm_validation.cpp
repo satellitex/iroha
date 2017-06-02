@@ -137,6 +137,8 @@ int main(int argc, char** argv) {
     blocks.push_back(CreateBlock());
   }
 
+  std::cout << "Start\n";
+
   auto start = std::chrono::high_resolution_clock::now();
 
   int validation_failure = 0;

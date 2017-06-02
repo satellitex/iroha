@@ -203,6 +203,8 @@ int main(int argc, char** argv) {
 
   Init(num_of_sigs, num_of_threads);
 
+  std::cout << "Start\n";
+
   auto start = std::chrono::high_resolution_clock::now();
 
   for (int i = 0; i < num_of_threads; i++) {
