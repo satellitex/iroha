@@ -83,6 +83,7 @@ namespace flatbuffer_service {
   }
 
   std::string toString(const iroha::Transaction &tx);
+  std::string dump(const iroha::Transaction &tx);
 
   Expected<flatbuffers::unique_ptr_t> addSignature(
     const iroha::ConsensusEvent &event, const std::string &publicKey,

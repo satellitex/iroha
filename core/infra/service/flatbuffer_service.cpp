@@ -222,41 +222,28 @@ namespace flatbuffer_service {
     return ret;
   }
 
-  // ToDo: We should use this for only debug. dump();
-  std::string toString(const iroha::Transaction& tx) {
+  std::string dump(const iroha::Transaction& tx) {
     std::string res = "";
     if (tx.creatorPubKey() != nullptr) {
-      res += "creatorPubKey:" + tx.creatorPubKey()->str() + ",\n";
+      res += tx.creatorPubKey()->str();
     }
     if (tx.signatures() != nullptr) {
-      res += "signatures:[\n";
       for (const auto& s : *tx.signatures()) {
         if (s->publicKey() != nullptr || s->signature() != nullptr) {
-          res += "  [\n    publicKey:" + s->publicKey()->str() + ",\n";
-          res += "    signature:" +
-                 std::string(s->signature()->begin(), s->signature()->end()) +
-                 ",\n";
-          res += "    timestamp:" + std::to_string(s->timestamp()) + "\n  ]\n";
+          res += s->publicKey()->str();
+          res += std::string(s->signature()->begin(), s->signature()->end());
+          res += std::to_string(s->timestamp());
         } else {
           res += "[broken]\n";
         }
       }
-      res += "]\n";
     }
     if (tx.attachment() != nullptr) {
       assert(tx.attachment()->mime() != nullptr);
       assert(tx.attachment()->data() != nullptr);
 
-      res += "attachment:[\n";
-      res += " mime:" +
-             std::string(tx.attachment()->mime()->begin(),
-                         tx.attachment()->mime()->end()) +
-             ",\n";
-      res += " data:" +
-             std::string(tx.attachment()->data()->begin(),
-                         tx.attachment()->data()->end()) +
-             ",\n";
-      res += "]\n";
+      res += std::string(tx.attachment()->mime()->begin(), tx.attachment()->mime()->end());
+      res += std::string(tx.attachment()->data()->begin(), tx.attachment()->data()->end());
     }
 
     std::map<iroha::Command, std::function<std::string(const void*)>>
@@ -269,27 +256,24 @@ namespace flatbuffer_service {
         const iroha::ComplexAsset* ast =
           static_cast<const iroha::ComplexAsset*>(asset);
 
-        std::string res = " ComplexAsset[\n";
-        res += "        asset_name:" + ast->asset_name()->str() + ",\n";
-        res += "        domain_name:" + ast->domain_name()->str() + ",\n";
-        res += "        ledger_name:" + ast->ledger_name()->str() + ",\n";
-        res += "        description:" + ast->description()->str() + "\n";
-        res += "        asset:logic:WIP\n";
-        res += "    ]\n";
+        std::string res;
+        res += ast->asset_name()->str();
+        res += ast->domain_name()->str();
+        res += ast->ledger_name()->str();
+        res += ast->description()->str();
         return res;
       };
     any_asset_to_strings[iroha::AnyAsset::Currency] =
       [&](const void* asset) -> std::string {
         const iroha::Currency* ast = static_cast<const iroha::Currency*>(asset);
 
-        std::string res = " Currency[\n";
-        res += "        currency_name:" + ast->currency_name()->str() + ",\n";
-        res += "        domain_name:" + ast->domain_name()->str() + ",\n";
-        res += "        ledger_name:" + ast->ledger_name()->str() + ",\n";
-        res += "        description:" + ast->description()->str() + "\n";
-        res += "        amount:" + ast->amount()->str() + "\n";
-        res += "        precision:" + std::to_string(ast->precision()) + "\n";
-        res += "    ]\n";
+        std::string res;
+        res += ast->currency_name()->str();
+        res += ast->domain_name()->str();
+        res += ast->ledger_name()->str();
+        res += ast->description()->str();
+        res += ast->amount()->str();
+        res += std::to_string(ast->precision());
         return res;
       };
 
@@ -298,12 +282,10 @@ namespace flatbuffer_service {
         const iroha::AssetCreate* cmd =
           static_cast<const iroha::AssetCreate*>(command);
 
-        std::string res = "AssetCreate[\n";
-        // res += "    creatorPubKey:" + cmd->creatorPubKey()->str() + ",\n"; No
-        res += "    ledger_name:" + cmd->ledger_name()->str() + ",\n";
-        res += "    domain_name:" + cmd->domain_name()->str() + ",\n";
-        res += "    asset_name:" + cmd->asset_name()->str() + "\n";
-        res += "]\n";
+        std::string res;
+        res += cmd->ledger_name()->str();
+        res += cmd->domain_name()->str();
+        res += cmd->asset_name()->str();
         return res;
       };
 
@@ -312,80 +294,20 @@ namespace flatbuffer_service {
         const iroha::AssetCreate* cmd =
           static_cast<const iroha::AssetCreate*>(command);
 
-        std::string res = "AssetCreate[\n";
-        res += "    ledger_name:" + cmd->ledger_name()->str() + ",\n";
-        res += "    domain_name:" + cmd->domain_name()->str() + ",\n";
-        res += "    asset_name:" + cmd->asset_name()->str() + "\n";
-        res += "]\n";
+        std::string res;
+        res += cmd->ledger_name()->str();
+        res += cmd->domain_name()->str();
+        res += cmd->asset_name()->str();
         return res;
       };
     command_to_strings[iroha::Command::Add] =
       [&](const void* command) -> std::string {
         const iroha::Add* cmd = static_cast<const iroha::Add*>(command);
 
-        std::string res = "Add[\n";
-        res += "    accPubkey:" + cmd->accPubKey()->str() + ",\n";
-        res += "    asset:" +
-               any_asset_to_strings[cmd->asset_nested_root()->asset_type()](
+        std::string res;
+        res += cmd->accPubKey()->str() + ",\n";
+        res += any_asset_to_strings[cmd->asset_nested_root()->asset_type()](
                  cmd->asset_nested_root()->asset());
-        res += "]\n";
-        return res;
-      };
-    command_to_strings[iroha::Command::PeerAdd] =
-      [&](const void* command) -> std::string {
-        const iroha::PeerAdd* cmd = static_cast<const iroha::PeerAdd*>(command);
-
-        std::string res = "PeerAdd[\n";
-        res += "    peer:publicKey:" + cmd->peer_nested_root()->publicKey()->str() +
-               ",\n";
-        res += "    peer:ip:" + cmd->peer_nested_root()->ip()->str() + ",\n";
-        res += "    peer:active:" +
-               std::to_string(cmd->peer_nested_root()->active()) + ",\n";
-        res += "    peer:join_ledger:" +
-               std::to_string(cmd->peer_nested_root()->join_ledger()) + "\n";
-        res += "]\n";
-        return res;
-      };
-    command_to_strings[iroha::Command::PeerRemove] =
-      [&](const void* command) -> std::string {
-        const iroha::PeerRemove* cmd =
-          static_cast<const iroha::PeerRemove*>(command);
-
-        std::string res = "PeerRemove[\n";
-        res += "    peer:publicKey:" + cmd->peerPubKey()->str();
-        res += "\n]\n";
-        return res;
-      };
-    command_to_strings[iroha::Command::PeerSetActive] =
-      [&](const void* command) -> std::string {
-        const iroha::PeerSetActive* cmd =
-          static_cast<const iroha::PeerSetActive*>(command);
-
-        std::string res = "PeerSetActive[\n";
-        res += "    peer:peerPubKey:" + cmd->peerPubKey()->str() + ",\n";
-        res += "]\n";
-        return res;
-      };
-    command_to_strings[iroha::Command::PeerSetTrust] =
-      [&](const void* command) -> std::string {
-        const iroha::PeerSetTrust* cmd =
-          static_cast<const iroha::PeerSetTrust*>(command);
-
-        std::string res = "PeerSetTrust[\n";
-        res += "    peerPubKey:" + cmd->peerPubKey()->str() + ",\n";
-        res += "    trust:" + std::to_string(cmd->trust()) + ",\n";
-        res += "]\n";
-        return res;
-      };
-    command_to_strings[iroha::Command::PeerChangeTrust] =
-      [&](const void* command) -> std::string {
-        const iroha::PeerChangeTrust* cmd =
-          static_cast<const iroha::PeerChangeTrust*>(command);
-
-        std::string res = "PeerSetTrust[\n";
-        res += "    peerPubKey:" + cmd->peerPubKey()->str() + ",\n";
-        res += "    delta:" + std::to_string(cmd->delta()) + "\n";
-        res += "]\n";
         return res;
       };
 
@@ -393,103 +315,297 @@ namespace flatbuffer_service {
       [&](const void* command) -> std::string {
         const iroha::AccountAdd* cmd =
           static_cast<const iroha::AccountAdd*>(command);
-        std::string res = "AccountAdd[\n";
+        std::string res;
         if (cmd->account_nested_root() != nullptr) {
           if (cmd->account_nested_root()->alias() != 0) {
-            res += "    account:alias:" +
-                   cmd->account_nested_root()->alias()->str() + ",\n";
+            res += cmd->account_nested_root()->alias()->str();
           }
           if (cmd->account_nested_root()->pubKey() != nullptr) {
-            res += "    account:pubKey:" +
-                   cmd->account_nested_root()->pubKey()->str() + ",\n";
+            res += cmd->account_nested_root()->pubKey()->str();
           }
           if (cmd->account_nested_root()->signatories() != nullptr) {
             for (const auto& s : *cmd->account_nested_root()->signatories()) {
-              res += "        signature[" + s->str() + "]\n";
+              res += s->str();
             }
           }
         }
-        res += "]\n";
-        return res;
-      };
-    command_to_strings[iroha::Command::AccountRemove] =
-      [&](const void* command) -> std::string {
-        const iroha::AccountRemove* cmd =
-          static_cast<const iroha::AccountRemove*>(command);
-
-        std::string res = "AccountRemove[\n";
-        res += "    account:pubKey:" + std::string(cmd->pubkey()->c_str());
-        res += "]\n";
-        return res;
-      };
-    command_to_strings[iroha::Command::AccountAddSignatory] =
-      [&](const void* command) -> std::string {
-        const iroha::AccountAddSignatory* cmd =
-          static_cast<const iroha::AccountAddSignatory*>(command);
-
-        std::string res = "AccountAddSignatory[\n";
-        res += "    account:" + cmd->account()->str() + ",\n";
-        for (const auto& s : *cmd->signatory()) {
-          res += "        signature[" + s->str() + "]\n";
-        }
-        res += "]\n";
-        return res;
-      };
-    command_to_strings[iroha::Command::AccountRemoveSignatory] =
-      [&](const void* command) -> std::string {
-        const iroha::AccountRemoveSignatory* cmd =
-          static_cast<const iroha::AccountRemoveSignatory*>(command);
-
-        std::string res = "AccountRemoveSignatory[\n";
-        res += "    account:" + cmd->account()->str() + ",\n";
-        for (const auto& s : *cmd->signatory()) {
-          res += "        signature[" + s->str() + "]\n";
-        }
-        res += "]\n";
-        return res;
-      };
-    command_to_strings[iroha::Command::AccountSetUseKeys] =
-      [&](const void* command) -> std::string {
-        const iroha::AccountSetUseKeys* cmd =
-          static_cast<const iroha::AccountSetUseKeys*>(command);
-
-        std::string res = "AccountSetUseKeys[\n";
-        for (const auto& a : *cmd->accounts()) {
-          res += "        account[" + a->str() + "]\n";
-        }
-        res += "    account:useKeys:" + std::to_string(cmd->useKeys()) + "\n";
-        res += "]\n";
         return res;
       };
 
-    command_to_strings[iroha::Command::ChaincodeAdd] =
-      [&](const void* command) -> std::string {
-        const iroha::ChaincodeAdd* cmd =
-          static_cast<const iroha::ChaincodeAdd*>(command);
-
-        std::string res = "ChaincodeAdd[\n";
-        res += "]\n";
-        return res;
-      };
-    command_to_strings[iroha::Command::ChaincodeRemove] =
-      [&](const void* command) -> std::string {
-        const iroha::ChaincodeRemove* cmd =
-          static_cast<const iroha::ChaincodeRemove*>(command);
-
-        std::string res = "ChaincodeRemove[\n";
-        res += "]\n";
-      };
-    command_to_strings[iroha::Command::ChaincodeExecute] =
-      [&](const void* command) -> std::string {
-        const iroha::ChaincodeExecute* cmd =
-          static_cast<const iroha::ChaincodeExecute*>(command);
-
-        std::string res = "ChaincodeExecute[\n";
-        res += "]\n";
-      };
     res += command_to_strings[tx.command_type()](tx.command());
     return res;
   }
+
+
+// ToDo: We should use this for only debug. dump();
+std::string toString(const iroha::Transaction& tx) {
+  std::string res = "";
+  if (tx.creatorPubKey() != nullptr) {
+    res += "creatorPubKey:" + tx.creatorPubKey()->str() + ",\n";
+  }
+  if (tx.signatures() != nullptr) {
+    res += "signatures:[\n";
+    for (const auto& s : *tx.signatures()) {
+      if (s->publicKey() != nullptr || s->signature() != nullptr) {
+        res += "  [\n    publicKey:" + s->publicKey()->str() + ",\n";
+        res += "    signature:" +
+               std::string(s->signature()->begin(), s->signature()->end()) +
+               ",\n";
+        res += "    timestamp:" + std::to_string(s->timestamp()) + "\n  ]\n";
+      } else {
+        res += "[broken]\n";
+      }
+    }
+    res += "]\n";
+  }
+  if (tx.attachment() != nullptr) {
+    assert(tx.attachment()->mime() != nullptr);
+    assert(tx.attachment()->data() != nullptr);
+
+    res += "attachment:[\n";
+    res += " mime:" +
+           std::string(tx.attachment()->mime()->begin(),
+                       tx.attachment()->mime()->end()) +
+           ",\n";
+    res += " data:" +
+           std::string(tx.attachment()->data()->begin(),
+                       tx.attachment()->data()->end()) +
+           ",\n";
+    res += "]\n";
+  }
+
+  std::map<iroha::Command, std::function<std::string(const void*)>>
+    command_to_strings;
+  std::map<iroha::AnyAsset, std::function<std::string(const void*)>>
+    any_asset_to_strings;
+
+  any_asset_to_strings[iroha::AnyAsset::ComplexAsset] =
+    [&](const void* asset) -> std::string {
+      const iroha::ComplexAsset* ast =
+        static_cast<const iroha::ComplexAsset*>(asset);
+
+      std::string res = " ComplexAsset[\n";
+      res += "        asset_name:" + ast->asset_name()->str() + ",\n";
+      res += "        domain_name:" + ast->domain_name()->str() + ",\n";
+      res += "        ledger_name:" + ast->ledger_name()->str() + ",\n";
+      res += "        description:" + ast->description()->str() + "\n";
+      res += "        asset:logic:WIP\n";
+      res += "    ]\n";
+      return res;
+    };
+  any_asset_to_strings[iroha::AnyAsset::Currency] =
+    [&](const void* asset) -> std::string {
+      const iroha::Currency* ast = static_cast<const iroha::Currency*>(asset);
+
+      std::string res = " Currency[\n";
+      res += "        currency_name:" + ast->currency_name()->str() + ",\n";
+      res += "        domain_name:" + ast->domain_name()->str() + ",\n";
+      res += "        ledger_name:" + ast->ledger_name()->str() + ",\n";
+      res += "        description:" + ast->description()->str() + "\n";
+      res += "        amount:" + ast->amount()->str() + "\n";
+      res += "        precision:" + std::to_string(ast->precision()) + "\n";
+      res += "    ]\n";
+      return res;
+    };
+
+  command_to_strings[iroha::Command::AssetCreate] =
+    [&](const void* command) -> std::string {
+      const iroha::AssetCreate* cmd =
+        static_cast<const iroha::AssetCreate*>(command);
+
+      std::string res = "AssetCreate[\n";
+      // res += "    creatorPubKey:" + cmd->creatorPubKey()->str() + ",\n"; No
+      res += "    ledger_name:" + cmd->ledger_name()->str() + ",\n";
+      res += "    domain_name:" + cmd->domain_name()->str() + ",\n";
+      res += "    asset_name:" + cmd->asset_name()->str() + "\n";
+      res += "]\n";
+      return res;
+    };
+
+  command_to_strings[iroha::Command::AssetCreate] =
+    [&](const void* command) -> std::string {
+      const iroha::AssetCreate* cmd =
+        static_cast<const iroha::AssetCreate*>(command);
+
+      std::string res = "AssetCreate[\n";
+      res += "    ledger_name:" + cmd->ledger_name()->str() + ",\n";
+      res += "    domain_name:" + cmd->domain_name()->str() + ",\n";
+      res += "    asset_name:" + cmd->asset_name()->str() + "\n";
+      res += "]\n";
+      return res;
+    };
+  command_to_strings[iroha::Command::Add] =
+    [&](const void* command) -> std::string {
+      const iroha::Add* cmd = static_cast<const iroha::Add*>(command);
+
+      std::string res = "Add[\n";
+      res += "    accPubkey:" + cmd->accPubKey()->str() + ",\n";
+      res += "    asset:" +
+             any_asset_to_strings[cmd->asset_nested_root()->asset_type()](
+               cmd->asset_nested_root()->asset());
+      res += "]\n";
+      return res;
+    };
+  command_to_strings[iroha::Command::PeerAdd] =
+    [&](const void* command) -> std::string {
+      const iroha::PeerAdd* cmd = static_cast<const iroha::PeerAdd*>(command);
+
+      std::string res = "PeerAdd[\n";
+      res += "    peer:publicKey:" + cmd->peer_nested_root()->publicKey()->str() +
+             ",\n";
+      res += "    peer:ip:" + cmd->peer_nested_root()->ip()->str() + ",\n";
+      res += "    peer:active:" +
+             std::to_string(cmd->peer_nested_root()->active()) + ",\n";
+      res += "    peer:join_ledger:" +
+             std::to_string(cmd->peer_nested_root()->join_ledger()) + "\n";
+      res += "]\n";
+      return res;
+    };
+  command_to_strings[iroha::Command::PeerRemove] =
+    [&](const void* command) -> std::string {
+      const iroha::PeerRemove* cmd =
+        static_cast<const iroha::PeerRemove*>(command);
+
+      std::string res = "PeerRemove[\n";
+      res += "    peer:publicKey:" + cmd->peerPubKey()->str();
+      res += "\n]\n";
+      return res;
+    };
+  command_to_strings[iroha::Command::PeerSetActive] =
+    [&](const void* command) -> std::string {
+      const iroha::PeerSetActive* cmd =
+        static_cast<const iroha::PeerSetActive*>(command);
+
+      std::string res = "PeerSetActive[\n";
+      res += "    peer:peerPubKey:" + cmd->peerPubKey()->str() + ",\n";
+      res += "]\n";
+      return res;
+    };
+  command_to_strings[iroha::Command::PeerSetTrust] =
+    [&](const void* command) -> std::string {
+      const iroha::PeerSetTrust* cmd =
+        static_cast<const iroha::PeerSetTrust*>(command);
+
+      std::string res = "PeerSetTrust[\n";
+      res += "    peerPubKey:" + cmd->peerPubKey()->str() + ",\n";
+      res += "    trust:" + std::to_string(cmd->trust()) + ",\n";
+      res += "]\n";
+      return res;
+    };
+  command_to_strings[iroha::Command::PeerChangeTrust] =
+    [&](const void* command) -> std::string {
+      const iroha::PeerChangeTrust* cmd =
+        static_cast<const iroha::PeerChangeTrust*>(command);
+
+      std::string res = "PeerSetTrust[\n";
+      res += "    peerPubKey:" + cmd->peerPubKey()->str() + ",\n";
+      res += "    delta:" + std::to_string(cmd->delta()) + "\n";
+      res += "]\n";
+      return res;
+    };
+
+  command_to_strings[iroha::Command::AccountAdd] =
+    [&](const void* command) -> std::string {
+      const iroha::AccountAdd* cmd =
+        static_cast<const iroha::AccountAdd*>(command);
+      std::string res = "AccountAdd[\n";
+      if (cmd->account_nested_root() != nullptr) {
+        if (cmd->account_nested_root()->alias() != 0) {
+          res += "    account:alias:" +
+                 cmd->account_nested_root()->alias()->str() + ",\n";
+        }
+        if (cmd->account_nested_root()->pubKey() != nullptr) {
+          res += "    account:pubKey:" +
+                 cmd->account_nested_root()->pubKey()->str() + ",\n";
+        }
+        if (cmd->account_nested_root()->signatories() != nullptr) {
+          for (const auto& s : *cmd->account_nested_root()->signatories()) {
+            res += "        signature[" + s->str() + "]\n";
+          }
+        }
+      }
+      res += "]\n";
+      return res;
+    };
+  command_to_strings[iroha::Command::AccountRemove] =
+    [&](const void* command) -> std::string {
+      const iroha::AccountRemove* cmd =
+        static_cast<const iroha::AccountRemove*>(command);
+
+      std::string res = "AccountRemove[\n";
+      res += "    account:pubKey:" + std::string(cmd->pubkey()->c_str());
+      res += "]\n";
+      return res;
+    };
+  command_to_strings[iroha::Command::AccountAddSignatory] =
+    [&](const void* command) -> std::string {
+      const iroha::AccountAddSignatory* cmd =
+        static_cast<const iroha::AccountAddSignatory*>(command);
+
+      std::string res = "AccountAddSignatory[\n";
+      res += "    account:" + cmd->account()->str() + ",\n";
+      for (const auto& s : *cmd->signatory()) {
+        res += "        signature[" + s->str() + "]\n";
+      }
+      res += "]\n";
+      return res;
+    };
+  command_to_strings[iroha::Command::AccountRemoveSignatory] =
+    [&](const void* command) -> std::string {
+      const iroha::AccountRemoveSignatory* cmd =
+        static_cast<const iroha::AccountRemoveSignatory*>(command);
+
+      std::string res = "AccountRemoveSignatory[\n";
+      res += "    account:" + cmd->account()->str() + ",\n";
+      for (const auto& s : *cmd->signatory()) {
+        res += "        signature[" + s->str() + "]\n";
+      }
+      res += "]\n";
+      return res;
+    };
+  command_to_strings[iroha::Command::AccountSetUseKeys] =
+    [&](const void* command) -> std::string {
+      const iroha::AccountSetUseKeys* cmd =
+        static_cast<const iroha::AccountSetUseKeys*>(command);
+
+      std::string res = "AccountSetUseKeys[\n";
+      for (const auto& a : *cmd->accounts()) {
+        res += "        account[" + a->str() + "]\n";
+      }
+      res += "    account:useKeys:" + std::to_string(cmd->useKeys()) + "\n";
+      res += "]\n";
+      return res;
+    };
+
+  command_to_strings[iroha::Command::ChaincodeAdd] =
+    [&](const void* command) -> std::string {
+      const iroha::ChaincodeAdd* cmd =
+        static_cast<const iroha::ChaincodeAdd*>(command);
+
+      std::string res = "ChaincodeAdd[\n";
+      res += "]\n";
+      return res;
+    };
+  command_to_strings[iroha::Command::ChaincodeRemove] =
+    [&](const void* command) -> std::string {
+      const iroha::ChaincodeRemove* cmd =
+        static_cast<const iroha::ChaincodeRemove*>(command);
+
+      std::string res = "ChaincodeRemove[\n";
+      res += "]\n";
+    };
+  command_to_strings[iroha::Command::ChaincodeExecute] =
+    [&](const void* command) -> std::string {
+      const iroha::ChaincodeExecute* cmd =
+        static_cast<const iroha::ChaincodeExecute*>(command);
+
+      std::string res = "ChaincodeExecute[\n";
+      res += "]\n";
+    };
+  res += command_to_strings[tx.command_type()](tx.command());
+  return res;
+}
+
 
   namespace detail {
     /**
@@ -815,12 +931,11 @@ namespace flatbuffer_service {
       // we need hashed string and timestamp in arguments.
       const auto signature = signature::sign(
         hash,
-        config::PeerServiceConfig::getInstance().getMyPublicKey(),
-        config::PeerServiceConfig::getInstance().getMyPrivateKey());
-      const std::vector<uint8_t> sigblob(signature.begin(), signature.end());
+        base64::decode(config::PeerServiceConfig::getInstance().getMyPublicKey()),
+        base64::decode(config::PeerServiceConfig::getInstance().getMyPrivateKey()));
       return ::iroha::CreateSignatureDirect(
         fbb, config::PeerServiceConfig::getInstance().getMyPublicKey().c_str(),
-        &sigblob, timestamp);
+        &signature, timestamp);
     }
 
   }  // namespace primitives

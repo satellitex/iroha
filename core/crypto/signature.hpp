@@ -50,7 +50,7 @@ byte_array_t sign(const std::string &message, const byte_array_t &publicKey,
 bool verify(const std::string &signature_b64, const std::string &message,
             const std::string &publicKey_b64);
 
-bool verify(const std::string &signature, const byte_array_t &message,
+bool verify(const byte_array_t &signature, const std::string &message,
             const byte_array_t &publicKey);
 
 KeyPair generateKeyPair();
