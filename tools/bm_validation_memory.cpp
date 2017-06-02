@@ -124,7 +124,6 @@ int num_of_blocks;
 int num_of_threads;
 int currTx;
 int validation_failure;
-bool running = true;
 
 void ProcessTx() {
 
@@ -214,18 +213,25 @@ int main(int argc, char** argv) {
   constexpr int Interval = 1000;
   std::cout << "Interval: " << (double) Interval / 1000.0 << std::endl;
   std::cout << command << std::endl;
-  system(command.c_str());
+  system(command.c_str()); // Base value
 
-  std::thread vmstat_logger([command, Interval] {
-    while (running) {
+  std::atomic_bool vmstat_alive(true);
+  std::thread([&vmstat_alive, &command, Interval]{
+    const std::chrono::milliseconds interval(Interval);
+    while (vmstat_alive.load()) {
+      auto start = std::chrono::system_clock::now();
       system(command.c_str());
-      std::this_thread::sleep_for(std::chrono::milliseconds(Interval));
+      auto end = std::chrono::system_clock::now();
+      auto wasted = end - start;
+      if (wasted < interval){
+        std::this_thread::sleep_for(interval - wasted);
+      }
     }
-  });
+  }).detach();
 
   std::cout << "Start validation\n";
 
-  auto start = std::chrono::high_resolution_clock::now();
+  auto start = std::chrono::system_clock::now();
 
   for (int i = 0; i < num_of_threads; i++) {
     threads.push_back(std::thread(ProcessTx));
@@ -235,20 +241,23 @@ int main(int argc, char** argv) {
     threads[i].join();
   }
 
-  auto end = std::chrono::high_resolution_clock::now();
+  auto end = std::chrono::system_clock::now();
 
   if (validation_failure) {
     std::cerr << "Validation failed rate: " << (long double) validation_failure / num_of_blocks << std::endl;
   }
 
-  running = false;
-  vmstat_logger.join();
+  vmstat_alive.store(false);
 
   std::chrono::duration<double> diff = end-start;
   std::cout << diff.count() << " sec\n";
 
+  std::cout << "output vmstat: " << path << "\n";
+
   // output item list
   dump(path, "free");
+  dump(path, "buff");
+  dump(path, "cache");
 
   return 0;
 }
