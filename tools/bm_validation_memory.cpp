@@ -215,10 +215,12 @@ int main(int argc, char** argv) {
 
   auto end = std::chrono::high_resolution_clock::now();
 
-  std::cout << "success rate: " << (long double)validation_failure / num_of_sigs << std::endl;
-  std::cout << "diff: " << (end - start).count() << " msec\n";
-  std::cout << "      " << (end - start).count() * 1e-3 << " sec\n";
-  //std::cout << "average time: " << (long double)(end - start).count() * 1e-3 / num_of_sigs  << " sec/sigs\n";
+  if (validation_failure) {
+    std::cerr << "success rate: " << (long double) validation_failure / num_of_sigs << std::endl;
+  }
+
+  std::chrono::duration<double> diff = end-start;
+  std::cout << diff.count() << " sec\n";
 
   return 0;
 }

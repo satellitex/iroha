@@ -127,8 +127,7 @@ int main(int argc, char** argv) {
 
   /*
    * 100万個の電子署名をバリデーションする
-   * ファイルに速度を書き出す
-   * 速度: 100万(tx数) / 全バリデーションにかかった時間(sec)
+   * 時間を標準出力する
    */
 
   std::cout << "Size of tx = " << CreateBlock().tx.size() << std::endl;
@@ -156,13 +155,14 @@ int main(int argc, char** argv) {
     if (!signature::verify(sigbytes, txHash, pkbytes)) { validation_failure++; }
   }
 
-  std::cout << "validation failure: " << validation_failure << " / " << repeat_times << std::endl;
-
   auto end = std::chrono::high_resolution_clock::now();
 
-  std::cout << "diff: " << (end - start).count() << " msec\n";
-  std::cout << "      " << (long double)(end - start).count() * 1e-3 << " sec\n";
-  //std::cout << "average time: " << (long double)(end - start).count() * 1e-3 / repeat_times<< " sec / tx_num\n";
+  if (validation_failure) {
+    std::cerr << "validation failure: " << validation_failure << " / " << repeat_times << std::endl;
+  }
+
+  std::chrono::duration<double> diff = end-start;
+  std::cout << diff.count() << " sec\n";
 
   return 0;
 }
