@@ -112,30 +112,24 @@ auto CreateBlock() {
   return block;
 }
 
-std::vector<std::vector<uint8_t>> txs;
-std::vector<std::vector<uint8_t>> sigs;
+
 std::vector<std::thread> threads;
 std::mutex mtx;
+
+std::vector<Block> blocks;
+int num_of_blocks;
+int num_of_threads;
 int currTx;
 int validation_failure;
-
-void CreateQueue(int num_of_sigs) {
-  for (int i=0; i<num_of_sigs; i++) {
-    auto tx = CreateSampleTx();
-    auto txHash = CreateTxHash(tx);
-    txs.push_back(tx);
-    sigs.push_back(CreateSignature(txHash));
-  }
-}
 
 void ProcessTx() {
 
   while (true) {
     mtx.lock();
-    auto &tx = txs[currTx];
-    auto &sig = sigs[currTx];
+    auto &tx = blocks[currTx].tx;
+    auto &sig = blocks[currTx].signature;
     currTx++;
-    if (currTx >= txs.size()) {
+    if (currTx >= num_of_blocks) {
       mtx.unlock();
       return;
     }
@@ -153,15 +147,6 @@ void ProcessTx() {
     );
     if (!signature::verify(sigbytes, txHash, pkbytes)) { validation_failure++; }
   }
-}
-
-void Init(int num_of_sigs, int num_of_threads) {
-  txs.clear();
-  sigs.clear();
-  currTx = 0;
-  validation_failure = 0;
-  threads.clear();
-  CreateQueue(num_of_sigs);
 }
 
 int main(int argc, char** argv) {
@@ -187,23 +172,22 @@ int main(int argc, char** argv) {
     exit(0);
   }
 
-  auto num_of_sigs = std::stoi(std::string(argv[1]));
-  auto num_of_threads = std::stoi(std::string(argv[2]));
+  std::cout << "Basic value\n";
+  system("vmstat");
 
-  auto keyPair = signature::generateKeyPair();
-  auto creatorPubkey = keyPair.publicKey;
-  auto creatorPrivateKey = keyPair.privateKey;
+  std::cout << "\n";
+  std::cout << "Creating Blocks...\n";
+
+  num_of_blocks = std::stoi(std::string(argv[1]));
+  num_of_threads = std::stoi(std::string(argv[2]));
 
   std::cout << "Size of tx = " << CreateBlock().tx.size() << std::endl;
 
-  std::vector<Block> blocks;
-  for (int i = 0; i < num_of_sigs; i++) {
+  for (int i = 0; i < num_of_blocks; i++) {
     blocks.push_back(CreateBlock());
   }
 
-  Init(num_of_sigs, num_of_threads);
-
-  std::cout << "Start\n";
+  std::cout << "Start verify\n";
 
   auto start = std::chrono::high_resolution_clock::now();
 
@@ -218,11 +202,14 @@ int main(int argc, char** argv) {
   auto end = std::chrono::high_resolution_clock::now();
 
   if (validation_failure) {
-    std::cerr << "success rate: " << (long double) validation_failure / num_of_sigs << std::endl;
+    std::cerr << "success rate: " << (long double) validation_failure / num_of_blocks << std::endl;
   }
 
   std::chrono::duration<double> diff = end-start;
   std::cout << diff.count() << " sec\n";
+
+  std::cout << std::endl;
+  system("vmstat");
 
   return 0;
 }
