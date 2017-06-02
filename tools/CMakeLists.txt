@@ -14,7 +14,6 @@ target_link_libraries(bm_validation
   hash
   signature
   base64
-  config_manager
 )
 
 
@@ -50,6 +49,6 @@ target_link_libraries(bm_validation_memory
   hash
   signature
   base64
-  config_manager
   timer
+  json
 )

@@ -21,7 +21,6 @@
 #include <service/flatbuffer_service.h>
 #include <commands_generated.h>
 #include <main_generated.h>
-#include <infra/config/peer_service_with_json.hpp>
 #include <flatbuffers/flatbuffers.h>
 #include <utils/datetime.hpp>
 
@@ -73,13 +72,13 @@ std::vector<uint8_t> CreateSampleTx() {
 
 flatbuffers::Offset<::iroha::Signature> CreateSignature(
   flatbuffers::FlatBufferBuilder &fbb, const std::string &hash, uint64_t timestamp) {
+  auto keyPair = signature::generateKeyPair();
   const auto signature = signature::sign(
-    hash,
-    base64::decode(config::PeerServiceConfig::getInstance().getMyPublicKey()),
-    base64::decode(config::PeerServiceConfig::getInstance().getMyPrivateKey()));
+    hash, keyPair.publicKey, keyPair.privateKey
+  );
   return ::iroha::CreateSignatureDirect(
-    fbb, config::PeerServiceConfig::getInstance().getMyPublicKey().c_str(),
-    &signature, timestamp);
+    fbb, base64::encode(keyPair.publicKey).c_str(), &signature, timestamp
+  );
 }
 
 std::vector<uint8_t> CreateSignature(std::string const& txHash) {
