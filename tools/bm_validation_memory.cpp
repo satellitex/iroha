@@ -21,10 +21,11 @@
 #include <service/flatbuffer_service.h>
 #include <commands_generated.h>
 #include <main_generated.h>
-#include <infra/config/peer_service_with_json.hpp>
 #include <flatbuffers/flatbuffers.h>
 #include <utils/datetime.hpp>
+#include <json.hpp>
 
+#include <sys/stat.h>
 #include <assert.h>
 #include <chrono>
 #include <string>
@@ -32,6 +33,26 @@
 #include <fstream>
 #include <sstream>
 #include <cstdint>
+#include <thread>
+#include <mutex>
+#include <atomic>
+
+struct Block {
+  std::vector<uint8_t> tx;
+  std::vector<uint8_t> signature;
+};
+
+std::vector<std::thread> threads;
+std::mutex mtx_curr_tx;
+std::mutex mtx_wsv;
+
+std::vector<Block> blocks;
+nlohmann::json wsv;
+
+int num_of_blocks;
+int num_of_threads;
+int curr_tx;
+int validation_failure;
 
 std::string random_string(int length) {
   std::string ret;
@@ -76,13 +97,13 @@ std::vector<uint8_t> CreateSampleTx() {
 
 flatbuffers::Offset<::iroha::Signature> CreateSignature(
   flatbuffers::FlatBufferBuilder &fbb, const std::string &hash, uint64_t timestamp) {
+  auto keyPair = signature::generateKeyPair();
   const auto signature = signature::sign(
-    hash,
-    base64::decode(config::PeerServiceConfig::getInstance().getMyPublicKey()),
-    base64::decode(config::PeerServiceConfig::getInstance().getMyPrivateKey()));
+    hash, keyPair.publicKey, keyPair.privateKey
+  );
   return ::iroha::CreateSignatureDirect(
-    fbb, config::PeerServiceConfig::getInstance().getMyPublicKey().c_str(),
-    &signature, timestamp);
+    fbb, base64::encode(keyPair.publicKey).c_str(), &signature, timestamp
+  );
 }
 
 std::vector<uint8_t> CreateSignature(std::string const& txHash) {
@@ -102,11 +123,6 @@ auto CreateTxHash(std::vector<uint8_t> const& tx) {
   );
 }
 
-struct Block {
-  std::vector<uint8_t> tx;
-  std::vector<uint8_t> signature;
-};
-
 auto CreateBlock() {
   auto tx = CreateSampleTx(); // サイズは小さく作っても300bytes以上
   Block block;
@@ -115,28 +131,18 @@ auto CreateBlock() {
   return block;
 }
 
-
-std::vector<std::thread> threads;
-std::mutex mtx;
-
-std::vector<Block> blocks;
-int num_of_blocks;
-int num_of_threads;
-int currTx;
-int validation_failure;
-
 void ProcessTx() {
 
   while (true) {
-    mtx.lock();
-    if (currTx >= num_of_blocks) {
-      mtx.unlock();
+    mtx_curr_tx.lock();
+    if (curr_tx >= num_of_blocks) {
+      mtx_curr_tx.unlock();
       return;
     }
-    auto &tx = blocks[currTx].tx;
-    auto &sig = blocks[currTx].signature;
-    currTx++;
-    mtx.unlock();
+    auto &tx = blocks[curr_tx].tx;
+    auto &sig = blocks[curr_tx].signature;
+    curr_tx++;
+    mtx_curr_tx.unlock();
 
     auto txHash = CreateTxHash(tx);
     auto sigroot = flatbuffers::GetRoot<::iroha::Signature>(sig.data());
@@ -148,7 +154,14 @@ void ProcessTx() {
       sigroot->signature()->begin(),
       sigroot->signature()->end()
     );
-    if (!signature::verify(sigbytes, txHash, pkbytes)) { validation_failure++; }
+
+    if (signature::verify(sigbytes, txHash, pkbytes)) {
+      mtx_wsv.lock();
+      wsv["signatories"].push_back(pk64);
+      mtx_wsv.unlock();
+    } else {
+      validation_failure++;
+    }
   }
 }
 
@@ -197,6 +210,21 @@ void dump(std::string const& path, std::string const& item_name) {
   }
 }
 
+void CreateBlocks(int num_of_blocks) {
+  std::cout << "Create blocks...\n";
+  for (int i = 0; i < num_of_blocks; i++) {
+    blocks.push_back(CreateBlock());
+  }
+}
+
+void CreateInitialWSV() {
+  std::cout << "Create initial WSV (alternative json on memory)...\n";
+  for (int i = 0; i < 1000; i++) {
+    wsv["values"].push_back(random_string(20000));
+  }
+//  std::cout << wsv.dump(2) << std::endl;
+}
+
 int main(int argc, char** argv) {
 
   if (argc != 3) {
@@ -204,32 +232,36 @@ int main(int argc, char** argv) {
     exit(0);
   }
 
-  std::cout << "Creating Blocks...\n";
-
   num_of_blocks = std::stoi(std::string(argv[1]));
   num_of_threads = std::stoi(std::string(argv[2]));
 
   std::cout << "Size of tx = " << CreateBlock().tx.size() << std::endl;
 
-  for (int i = 0; i < num_of_blocks; i++) {
-    blocks.push_back(CreateBlock());
-  }
+  CreateBlocks(num_of_blocks);
+
+  CreateInitialWSV();
 
   const std::string path = "/tmp/validation_memory";//-" + std::to_string((int)getpid());
-  const std::string command = "vmstat >> " + path;
-
   remove_if_exists(path);
+
+  const std::string command = "vmstat >> " + path;
 
   constexpr int Interval = 1000;
   std::cout << "Interval: " << (double) Interval / 1000.0 << std::endl;
   std::cout << command << std::endl;
-  system(command.c_str()); // Base value
+
+  // Outputs base vmstat
+  system(command.c_str());
+
+  std::cout << "Start validation...\n";
 
   std::atomic_bool vmstat_alive(true);
-  std::thread([&vmstat_alive, &command, Interval]{
+  std::thread vmstat_logger([&vmstat_alive, &command, Interval]{
     const std::chrono::milliseconds interval(Interval);
     while (vmstat_alive.load()) {
       auto start = std::chrono::system_clock::now();
+
+      // Outputs vmstat while running.
       system(command.c_str());
       auto end = std::chrono::system_clock::now();
       auto wasted = end - start;
@@ -237,9 +269,7 @@ int main(int argc, char** argv) {
         std::this_thread::sleep_for(interval - wasted);
       }
     }
-  }).detach();
-
-  std::cout << "Start validation\n";
+  });
 
   auto start = std::chrono::system_clock::now();
 
@@ -258,13 +288,16 @@ int main(int argc, char** argv) {
   }
 
   vmstat_alive.store(false);
+  vmstat_logger.join();
+
+//  std::cout << wsv.dump(2) << std::endl;
 
   std::chrono::duration<double> diff = end-start;
   std::cout << diff.count() << " sec\n";
 
   std::cout << "output vmstat: " << path << "\n";
 
-  // output item list
+  // Outputs item list
   dump(path, "free");
   dump(path, "buff");
   dump(path, "cache");
