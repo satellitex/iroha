@@ -51,4 +51,5 @@ target_link_libraries(bm_validation_memory
   signature
   base64
   config_manager
+  timer
 )
