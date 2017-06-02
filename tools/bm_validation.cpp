@@ -185,5 +185,19 @@ int main(int argc, char** argv) {
 
   std::cout << std::endl;
 
+  auto num_of_centers = 3;//(TryTimes + 1) / 5 * 3;
+  auto num_of_begin_cut = 1;//(results.size() - num_of_centers) / 2;
+
+  double center_sum = 0.0;
+  std::cout << "Trim result:\n";
+  for (size_t i = 1; i < 4; i++) {
+    if (i > 1) std::cout << ",";
+    std::cout << results[i];
+    center_sum += results[i];
+  }
+
+  std::cout << std::endl;
+  std::cout << "Ave of trim result:\n" << center_sum / 3 << "\n";
+
   return 0;
 }
