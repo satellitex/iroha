@@ -152,7 +152,17 @@ void ProcessTx() {
   }
 }
 
+void remove_if_exists(std::string const& path) {
+  const std::string rm_cmd  = "rm " + path;
+  struct stat st;
+  if (stat(path.c_str(), &st) == 0) {
+    std::cout << rm_cmd << std::endl;
+    system(rm_cmd.c_str());
+  }
+}
+
 void dump(std::string const& path, std::string const& item_name) {
+
   std::fstream fs(path);
   std::string line;
   std::vector<std::vector<std::string>> buf;
@@ -176,7 +186,9 @@ void dump(std::string const& path, std::string const& item_name) {
     }
   }
 
-  const auto items_path = path + "-" + item_name;
+  auto items_path = path + "-" + item_name;
+  remove_if_exists(items_path);
+
   std::cout << "output '" << item_name << "' CSV: " << items_path << std::endl;
   std::ofstream out(items_path);
 
@@ -206,9 +218,7 @@ int main(int argc, char** argv) {
   const std::string path = "/tmp/validation_memory";//-" + std::to_string((int)getpid());
   const std::string command = "vmstat >> " + path;
 
-  const std::string rm_cmd  = "rm " + path;
-  std::cout << rm_cmd << std::endl;
-  system(rm_cmd.c_str());
+  remove_if_exists(path);
 
   constexpr int Interval = 1000;
   std::cout << "Interval: " << (double) Interval / 1000.0 << std::endl;
