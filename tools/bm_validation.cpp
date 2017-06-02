@@ -112,38 +112,16 @@ auto CreateBlock() {
   return block;
 }
 
-int main(int argc, char** argv) {
+int num_of_blocks;
+std::vector<Block> blocks;
+std::vector<double> results;
 
-  if (argc != 2) {
-    std::cout << "Usage: ./bm_validation [times]\n";
-    exit(0);
-  }
-
-  auto repeat_times = std::stoi(std::string(argv[1]));
-
-  auto keyPair = signature::generateKeyPair();
-  auto creatorPubkey = keyPair.publicKey;
-  auto creatorPrivateKey = keyPair.privateKey;
-
-  /*
-   * 100万個の電子署名をバリデーションする
-   * 時間を標準出力する
-   */
-
-  std::cout << "Size of tx = " << CreateBlock().tx.size() << std::endl;
-
-  std::vector<Block> blocks;
-  for (int i = 0; i < repeat_times; i++) {
-    blocks.push_back(CreateBlock());
-  }
-
-  std::cout << "Start\n";
-
+void process() {
   auto start = std::chrono::high_resolution_clock::now();
 
   int validation_failure = 0;
 
-  for (int i = 0; i < repeat_times; i++) {
+  for (int i = 0; i < num_of_blocks; i++) {
     auto txHash = CreateTxHash(blocks[i].tx);
     auto sig = flatbuffers::GetRoot<::iroha::Signature>(blocks[i].signature.data());
 
@@ -160,11 +138,52 @@ int main(int argc, char** argv) {
   auto end = std::chrono::high_resolution_clock::now();
 
   if (validation_failure) {
-    std::cerr << "validation failure: " << validation_failure << " / " << repeat_times << std::endl;
+    std::cerr << "validation failure: " << validation_failure << " / " << num_of_blocks << std::endl;
   }
 
   std::chrono::duration<double> diff = end-start;
-  std::cout << diff.count() << " sec\n";
+  std::cout << diff.count() << "\n";
+  results.push_back(diff.count());
+}
+
+int main(int argc, char** argv) {
+
+  if (argc != 2) {
+    std::cout << "Usage: ./bm_validation [num_of_blocks]\n";
+    exit(0);
+  }
+
+  num_of_blocks = std::stoi(std::string(argv[1]));
+
+  /*
+   * 100万個の電子署名をバリデーションする
+   * 時間を標準出力する
+   */
+
+  std::cout << "Size of tx = " << CreateBlock().tx.size() << std::endl;
+
+  for (int i = 0; i < num_of_blocks; i++) {
+    blocks.push_back(CreateBlock());
+  }
+
+  constexpr int TryTimes = 5;
+
+  std::cout << "Calc validation time (sec) " << TryTimes << " times.\n";
+
+  for (int i = 0; i < TryTimes; i++) {
+    process();
+  }
+
+  std::cout << "\n";
+  std::sort(results.begin(), results.end());
+  std::cout << "Result CSV (sorted):\n";
+
+  for (size_t i = 0; i < results.size(); i++) {
+    if (i) std::cout << ",";
+    std::cout << results[i];
+  }
+
+  std::cout << std::endl;
 
   return 0;
 }
