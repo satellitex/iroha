@@ -129,13 +129,13 @@ void ProcessTx() {
 
   while (true) {
     mtx.lock();
-    auto &tx = blocks[currTx].tx;
-    auto &sig = blocks[currTx].signature;
-    currTx++;
     if (currTx >= num_of_blocks) {
       mtx.unlock();
       return;
     }
+    auto &tx = blocks[currTx].tx;
+    auto &sig = blocks[currTx].signature;
+    currTx++;
     mtx.unlock();
 
     auto txHash = CreateTxHash(tx);
