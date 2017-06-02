@@ -29,6 +29,9 @@
 #include <chrono>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <sstream>
+#include <cstdint>
 
 std::string random_string(int length) {
   std::string ret;
@@ -121,6 +124,7 @@ int num_of_blocks;
 int num_of_threads;
 int currTx;
 int validation_failure;
+bool running = true;
 
 void ProcessTx() {
 
@@ -149,33 +153,46 @@ void ProcessTx() {
   }
 }
 
+void dump(std::string const& path, std::string const& item_name) {
+  std::fstream fs(path);
+  std::string line;
+  std::vector<std::vector<std::string>> buf;
+  while (std::getline(fs, line)) {
+    std::stringstream ss(line);
+    buf.resize(buf.size() + 1);
+    for (std::string s; ss >> s;) {
+      buf.back().push_back(s);
+    }
+  }
+
+  std::vector<std::tuple<int, int64_t>> items;
+  int curr = 0;
+
+  for (size_t i = 0; i < buf.size(); i++) {
+    for (size_t j = 0; j < buf[i].size(); j++) {
+      if (buf[i][j] == item_name) {
+        assert(i + 1 < buf.size());
+        items.emplace_back(curr++, std::stoll(buf[i + 1][j]));
+      }
+    }
+  }
+
+  const auto items_path = path + "-" + item_name;
+  std::cout << "output '" << item_name << "' CSV: " << items_path << std::endl;
+  std::ofstream out(items_path);
+
+  for (auto const& e: items) {
+    out << std::get<0>(e) << "," << std::get<1>(e) << std::endl;
+  }
+}
+
 int main(int argc, char** argv) {
 
-  // blockを100万個作る
-
-  // sign(block.peer_sigs[0].sig, block.peer_sigs[0].pubkey) から expected_hash を作る
-
-  // actual_hash = sha3_256(dump(block.tx))
-
-  // if (actual_hash != expected_hash) { validation_failure ++; }
-
-  /*
-   Using 512MB, 2, 4, 8 Gb servers on vultr,
-   test time to complete 1 million digital signature verifications in parallel, with 4 threads,
-   while storing a 20,000,000 length hashmap in memory of public keys to a Json string
-   that is different for every record. No need to plot the violin, but just record total time.
-   */
-
-
   if (argc != 3) {
-    std::cout << "Usage: ./bm_validation_memory [num of sigs] [num of threads]\n";
+    std::cout << "Usage: ./bm_validation_memory [num of blocks] [num of threads]\n";
     exit(0);
   }
 
-  std::cout << "Basic value\n";
-  system("vmstat");
-
-  std::cout << "\n";
   std::cout << "Creating Blocks...\n";
 
   num_of_blocks = std::stoi(std::string(argv[1]));
@@ -187,7 +204,26 @@ int main(int argc, char** argv) {
     blocks.push_back(CreateBlock());
   }
 
-  std::cout << "Start verify\n";
+  const std::string path = "/tmp/validation_memory";//-" + std::to_string((int)getpid());
+  const std::string command = "vmstat >> " + path;
+
+  const std::string rm_cmd  = "rm " + path;
+  std::cout << rm_cmd << std::endl;
+  system(rm_cmd.c_str());
+
+  constexpr int Interval = 1000;
+  std::cout << "Interval: " << (double) Interval / 1000.0 << std::endl;
+  std::cout << command << std::endl;
+  system(command.c_str());
+
+  std::thread vmstat_logger([command, Interval] {
+    while (running) {
+      system(command.c_str());
+      std::this_thread::sleep_for(std::chrono::milliseconds(Interval));
+    }
+  });
+
+  std::cout << "Start validation\n";
 
   auto start = std::chrono::high_resolution_clock::now();
 
@@ -202,14 +238,17 @@ int main(int argc, char** argv) {
   auto end = std::chrono::high_resolution_clock::now();
 
   if (validation_failure) {
-    std::cerr << "success rate: " << (long double) validation_failure / num_of_blocks << std::endl;
+    std::cerr << "Validation failed rate: " << (long double) validation_failure / num_of_blocks << std::endl;
   }
+
+  running = false;
+  vmstat_logger.join();
 
   std::chrono::duration<double> diff = end-start;
   std::cout << diff.count() << " sec\n";
 
-  std::cout << std::endl;
-  system("vmstat");
+  // output item list
+  dump(path, "free");
 
   return 0;
 }
