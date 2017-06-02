@@ -38,10 +38,7 @@
 #include <atomic>
 #include <map>
 
-struct Block {
-  std::vector<uint8_t> tx;
-  std::vector<uint8_t> signature;
-};
+#include "bm_validation.hpp"
 
 std::vector<std::thread> threads;
 std::mutex mtx_curr_tx;
@@ -55,84 +52,7 @@ int num_of_threads;
 int curr_tx;
 int validation_failure;
 
-std::string random_string(int length) {
-  std::string ret;
-  for (int i=0; i<length; i++) {
-    ret += 'a' + rand() % 26;
-  }
-  return ret;
-}
-
-std::vector<uint8_t> CreateSampleTx() {
-  flatbuffers::FlatBufferBuilder fbb;
-
-  const auto accountBuf = flatbuffer_service::account::CreateAccount(
-    random_string(5), random_string(5), random_string(5), {}, 1);
-
-  const auto signatureOffsets = [&] {
-    std::vector<uint8_t> sigblob1;
-    return std::vector<flatbuffers::Offset<::iroha::Signature>>{
-      ::iroha::CreateSignatureDirect(fbb, random_string(2).c_str(), &sigblob1, 100000)
-    };
-  }();
-
-  std::vector<uint8_t> _hash;
-
-  const auto attachmentOffset = [&] {
-    auto data = std::vector<uint8_t>{'d', 't'};
-    return ::iroha::CreateAttachmentDirect(
-      fbb, random_string(50).c_str(), &data);
-  }();
-
-  const auto txOffset = ::iroha::CreateTransactionDirect(
-    fbb, "pk", iroha::Command::AccountAdd,
-    ::iroha::CreateAccountAddDirect(fbb, &accountBuf).Union(),
-    &signatureOffsets, &_hash, 10000, /*attachmentOffset*/ 0);
-
-  fbb.Finish(txOffset);
-
-  auto ptr = fbb.GetBufferPointer();
-
-  return {ptr, ptr + fbb.GetSize()};
-}
-
-flatbuffers::Offset<::iroha::Signature> CreateSignature(
-  flatbuffers::FlatBufferBuilder &fbb, const std::string &hash, uint64_t timestamp) {
-  auto keyPair = signature::generateKeyPair();
-  const auto signature = signature::sign(
-    hash, keyPair.publicKey, keyPair.privateKey
-  );
-  return ::iroha::CreateSignatureDirect(
-    fbb, base64::encode(keyPair.publicKey).c_str(), &signature, timestamp
-  );
-}
-
-std::vector<uint8_t> CreateSignature(std::string const& txHash) {
-  flatbuffers::FlatBufferBuilder fbb;
-  fbb.Finish(CreateSignature(fbb, txHash, 12345678));
-  auto ptr = fbb.GetBufferPointer();
-  return {ptr, ptr + fbb.GetSize()};
-}
-
-auto dump(::iroha::Transaction const& tx) {
-  return flatbuffer_service::dump(tx);
-}
-
-auto CreateTxHash(std::vector<uint8_t> const& tx) {
-  return hash::sha3_256_hex(
-    dump(*flatbuffers::GetRoot<::iroha::Transaction>(tx.data()))
-  );
-}
-
-auto CreateBlock() {
-  auto tx = CreateSampleTx(); // サイズは小さく作っても300bytes以上
-  Block block;
-  block.tx = tx;
-  block.signature = CreateSignature(CreateTxHash(tx));
-  return block;
-}
-
-void ProcessTx() {
+void process() {
 
   while (true) {
     mtx_curr_tx.lock();
@@ -226,14 +146,14 @@ void output_csv(std::string const& path,
   }
 }
 
-void CreateBlocks(int num_of_blocks) {
+void create_blocks(int num_of_blocks) {
   std::cout << "Create blocks...\n";
   for (int i = 0; i < num_of_blocks; i++) {
-    blocks.push_back(CreateBlock());
+    blocks.push_back(CreateBlock(0));
   }
 }
 
-void CreateInitialWSV() {
+void create_init_wsv() {
   std::cout << "Create initial WSV (alternative json on memory)...\n";
   for (int i = 0; i < 1000; i++) {
     wsv["values"].push_back(random_string(20000));
@@ -244,18 +164,17 @@ void CreateInitialWSV() {
 int main(int argc, char** argv) {
 
   if (argc != 3) {
-    std::cout << "Usage: ./bm_validation_memory [num of blocks] [num of threads]\n";
+    std::cout << "Usage: ./bm_validation_memory num_of_blocks num_of_threads\n";
     exit(0);
   }
 
   num_of_blocks = std::stoi(std::string(argv[1]));
   num_of_threads = std::stoi(std::string(argv[2]));
 
-  std::cout << "Size of tx = " << CreateBlock().tx.size() << std::endl;
+  std::cout << "Size of tx = " << CreateBlock(0).tx.size() << std::endl;
 
-  CreateBlocks(num_of_blocks);
-
-  CreateInitialWSV();
+  create_blocks(num_of_blocks);
+  create_init_wsv();
 
   const std::string path = "/tmp/validation_memory";//-" + std::to_string((int)getpid());
   remove_if_exists(path);
@@ -295,7 +214,7 @@ int main(int argc, char** argv) {
   auto start = std::chrono::system_clock::now();
 
   for (int i = 0; i < num_of_threads; i++) {
-    threads.push_back(std::thread(ProcessTx));
+    threads.push_back(std::thread(process));
   }
 
   for (int i = 0; i < num_of_threads; i++) {
