@@ -17,6 +17,11 @@ table Transaction {
   attachment: Attachment;
 }
 
+// Used to send txs to Torii.
+table TransactionBatch {
+  txs: [Transaction] (required);
+}
+
 table Attachment {
   mime: string;
   data: [ubyte];

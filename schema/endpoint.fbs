@@ -50,6 +50,7 @@ rpc_service Sumeragi {
 rpc_service ClientService {
   // Used by sending transaction
   Torii(Transaction): SumeragiResponse (streaming: "none");
+  ToriiBatch(TransactionBatch): SumeragiResponse (streaming: "none");
 
   // Query(QueryRequestWrapper): QueryRequestWrapper (streaming: "none");
 }

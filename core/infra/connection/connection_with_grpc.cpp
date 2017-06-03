@@ -48,7 +48,7 @@ static std::shared_ptr<grpc::Channel> createChannel(const std::string& serverIp/
  * @details UnPacks flatbuf and dispatches it to stateless-validation.
  *          sumeragi -> interface -> RPC Client -> [RPC Server] -> stateless-validation -> sumeragi
 */
-class SumeragiServer {
+class SumeragiServer : public protocol::Sumeragi::Service {
   virtual grpc::Status Communicate(
     grpc::ClientContext* context,
     const flatbuffers::BufferRef<protocol::Block>& request,
@@ -156,6 +156,51 @@ void commit(const sumeragi::Block& block, ::peer::Nodes::const_iterator sender) 
 
 } // namespace with_sumeragi
 
+class ClientService : public protocol::ClientService::Service {
+public:
+  ClientService(const std::string& serverIp)
+    : stub_(protocol::ClientService::NewStub(createChannel(serverIp))) {}
+
+  //grpc::Status
+
+  /**
+   * Torii
+   * @brief Iroha receives a tx from gRPC clients.
+   * @param context - has client's ip and port
+   * @param request - contains tx to consensus
+   * @param response - has signature of this peer that guarantees completion of receiving tx.
+   * @return grpc::Status
+   */
+  virtual grpc::Status Torii(
+    grpc::ServerContext* context,
+    const flatbuffers::BufferRef<protocol::Transaction>* request,
+    flatbuffers::BufferRef<protocol::SumeragiResponse>* response)
+  {
+
+  }
+
+  /**
+   * ToriiBatch
+   * @brief Iroha receives batched txs from gRPC clients.
+   * @param context
+   * @param request
+   * @param response
+   * @return grpc::Status
+   */
+  virtual ::grpc::Status ToriiBatch(
+    grpc::ClientContext* context,
+    const flatbuffers::BufferRef<protocol::TransactionBatch>& request,
+    flatbuffers::BufferRef<protocol::SumeragiResponse>* response)
+  {
+    throw std::runtime_error("Not implemented");
+  }
+
+  // virtual grpc::Status Query(...) {}
+
+private:
+  std::unique_ptr<protocol::ClientService::Stub> stub_;
+};
+
 class PeerServiceClient {
 public:
   PeerServiceClient(const std::string& serverIp)
@@ -163,7 +208,7 @@ public:
 
   /**
    * Torii
-   * @brief Cient for sending tx to sumeragi. This method is for peer service.
+   * @brief Peer services use this to send a tx to other peer's sumeragi.
    * @details peer service -> interface -> [RPC Cient] -> RPC Server -> other sumeragi
    *
    * @param tx [description]
