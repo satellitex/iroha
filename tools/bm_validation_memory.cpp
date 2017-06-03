@@ -25,7 +25,6 @@
 #include <utils/datetime.hpp>
 #include <json.hpp>
 
-#include <sys/stat.h>
 #include <assert.h>
 #include <chrono>
 #include <string>
@@ -83,15 +82,6 @@ void process() {
     } else {
       validation_failure++;
     }
-  }
-}
-
-void remove_if_exists(std::string const& path) {
-  const std::string rm_cmd  = "rm " + path;
-  struct stat st;
-  if (stat(path.c_str(), &st) == 0) {
-    std::cout << rm_cmd << std::endl;
-    system(rm_cmd.c_str());
   }
 }
 
@@ -165,7 +155,7 @@ int main(int argc, char** argv) {
 
   if (argc != 3) {
     std::cout << "Usage: ./bm_validation_memory num_of_blocks num_of_threads\n";
-    exit(0);
+    exit(1);
   }
 
   num_of_blocks = std::stoi(std::string(argv[1]));
