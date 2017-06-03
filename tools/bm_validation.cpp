@@ -50,42 +50,54 @@ void process(Block const& block) {
 
 int main(int argc, char** argv) {
 
+  std::vector<int> adds = {0, 100, 1000, 10000, (int)1e5, (int)1e6, (int)1e7, (int)1e8};
+  std::vector<std::string> name_txsize = {"base", "+100", "+1000", "+10000", "+1e5", "+1e6", "+1e7", "+1e8"};
+
   if (argc < 2) {
-    std::cout << "Usage: ./bm_validation try_times [additional]\n";
-    exit(0);
+    std::cout << "Usage: ./bm_validation try_times [type_count = 1]\n";// [additional]\n";
+    exit(1);
   }
 
   const int try_times = std::stoi(std::string(argv[1]));
+  int type_count = 1;
 
-  int additional = 0;
   if (argc > 2) {
-    if (additional < 0) {
-      std::cout << "'additional' should not be negative.\n";
-      exit(0);
+    type_count = std::stoi(std::string(argv[2]));
+    if (type_count < 1 || type_count > (int)adds.size()) {
+      std::cout << "type_count's range: [1," << adds.size() << "]\n";
+      exit(1);
     }
-    additional = std::stoi(std::string(argv[2]));
   }
 
   /*
    * 100万回電子署名をバリデーションして、回数と時間をCSVに出力する
+   * トランザクションのサイズは複数指定できる
    */
-
-  std::cout << "Size of tx = " << CreateBlock(additional).tx.size() << std::endl;
 
   std::cout << "Calc validation duration (sec) " << try_times << " times.\n";
 
-  std::ofstream out("/tmp/validation_throughput.csv");
-  out << "n-times,duration" << std::endl;
+  const std::string path = "/tmp/validation_throughput.csv";
+  remove_if_exists(path);
+  std::ofstream out(path);
+  out << "n-times,duration,txsize" << std::endl;
 
-  for (int i = 0; i < try_times; i++) {
-    auto block = CreateBlock(additional);
-    auto start = std::chrono::system_clock::now();
-    process(block);
-    auto end = std::chrono::system_clock::now();
+  for (int type_idx = 0; type_idx < type_count; type_idx++) {
+    auto additional = adds[type_idx];
+    const auto txsize = CreateBlock(additional).tx.size();
+    std::cout << "Size of tx = " << txsize
+                                 << (additional == 0 ? "(base txsize)\n" : "\n");
+    for (int i = 0; i < try_times; i++) {
+      auto block = CreateBlock(additional);
+      auto start = std::chrono::system_clock::now();
+      process(block);
+      auto end = std::chrono::system_clock::now();
 
-    std::chrono::duration<double> diff = end-start;
-    out << i << "," << diff.count() << std::endl;
+      std::chrono::duration<double> diff = end - start;
+      out << i << "," << diff.count() << "," << name_txsize[type_idx] << std::endl;
+    }
   }
+
+  std::cout << "output: " << path << std::endl;
 
   return 0;
 }

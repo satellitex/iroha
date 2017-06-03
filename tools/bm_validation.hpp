@@ -20,14 +20,35 @@
 #include <crypto/signature.hpp>
 #include <crypto/hash.hpp>
 #include <crypto/base64.hpp>
+#include <random>
+#include <sys/stat.h>
 
 #ifndef BM_VALIDATION_HPP
 #define BM_VALIDATION_HPP
 
+std::random_device seed_gen;
+std::mt19937    rnd_gen_32(seed_gen());
+std::mt19937_64 rnd_gen_64(seed_gen());
+
+// #include <utils/random.hpp>
+// return random value of [min, max]
+inline int32_t random_value_32(int32_t min, int32_t max) {
+  assert(min <= max);
+  std::uniform_int_distribution<int32_t> dist(min, max);
+  return dist(rnd_gen_32);
+}
+
+// return random value of [min, max]
+inline uint64_t random_value_64(uint64_t min, uint64_t max) {
+  assert(min <= max);
+  std::uniform_int_distribution<uint64_t> dist(min, max);
+  return dist(rnd_gen_64);
+}
+
 std::string random_string(int length) {
   std::string ret;
   for (int i=0; i<length; i++) {
-    ret += 'a' + rand() % 26;
+    ret += 'a' + random_value_32(0, 25);
   }
   return ret;
 }
@@ -104,6 +125,15 @@ auto CreateBlock(int additinal) {
   block.tx = tx;
   block.signature = CreateSignature(CreateTxHash(tx));
   return block;
+}
+
+void remove_if_exists(std::string const& path) {
+  const std::string rm_cmd  = "rm " + path;
+  struct stat st;
+  if (stat(path.c_str(), &st) == 0) {
+    std::cout << rm_cmd << std::endl;
+    system(rm_cmd.c_str());
+  }
 }
 
 #endif
