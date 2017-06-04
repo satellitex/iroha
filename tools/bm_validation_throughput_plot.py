@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 #import numpy as np
 import seaborn as sns
 import pandas as pd
+import sys
 
-url = "/tmp/validation_throughput.csv"
+url = sys.argv[1]
 
 table = pd.read_csv(url)
-#print(table)
 
 sns.violinplot(x="duration", y="txsize", data=table)
 plt.savefig("validation_throughput_plot.png")
