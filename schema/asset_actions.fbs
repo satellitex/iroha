@@ -28,8 +28,8 @@ table Exchange {
 }
 
 table AssetSetPermission {
-  account:  string  (required);
-  asset:  string  (required);
+  account:    string  (required);
+  asset_uuid: string  (required);
   permission: [ubyte] (required);
 }
 

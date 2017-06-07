@@ -30,7 +30,7 @@ compile_fbs_to_cpp(transaction.fbs)
 
 add_library(endpoint_fbs STATIC
     ${IROHA_SCHEMA_DIR}/endpoint.grpc.fb.cc
-    )
+)
 
 target_link_libraries(endpoint_fbs
     grpc++

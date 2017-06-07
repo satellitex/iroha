@@ -9,8 +9,7 @@ table Currency {
 
 // [WIP] ComplexAsset
 table ComplexAsset {
-  prop: [ubyte] (required);
-  logic:  [ubyte] (required);
+  prop:   [ubyte] (required);
 }
 
 union AnyAsset {
@@ -21,6 +20,5 @@ union AnyAsset {
 table Asset {
   name: string;
   uuid: string;
-  description:  string;
   asset:  AnyAsset  (required);
 }
