@@ -63,7 +63,7 @@ public:
   }
 
   void format(spdlog::details::log_msg &msg) override {
-    msg.formatted << datetime::unixtime_str()
+    msg.formatted << datetime::unixtime()
                   << (msg.level != (spdlog::level::level_enum)LogLevel::Explore
                       ? " " + level_names[msg.level]
                       : "")
