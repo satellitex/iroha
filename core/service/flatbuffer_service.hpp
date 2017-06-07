@@ -14,6 +14,9 @@
 * limitations under the License.
 */
 
+#ifndef IROHA_FLATBUFFER_SERVICE_HPP
+#define IROHA_FLATBUFFER_SERVICE_HPP
+
 #include <flatbuffers/flatbuffers.h>
 #include <primitives_generated.h> // Signature
 #include <endpoint_generated.h> // SumeragiResponse
@@ -27,20 +30,7 @@ namespace primitives {
 
 flatbuffers::Offset<protocol::Signature> CreateSignature(
   flatbuffers::FlatBufferBuilder &fbb, const std::string &hash
-) {
-  const auto pk = base64::decode(
-    config::PeerServiceConfig::getInstance().getMyPublicKey()
-  );
-  const auto sk = base64::decode(
-    config::PeerServiceConfig::getInstance().getMyPrivateKey()
-  );
-
-  const auto signature = signature::sign(
-    hash, pk, sk
-  );
-
-  return protocol::CreateSignatureDirect(fbb, &pk, &signature);
-}
+);
 
 } // namespace primitives
 
@@ -50,28 +40,14 @@ flatbuffers::BufferRef<protocol::SumeragiResponse> CreateSumeragiResponseRef(
   flatbuffers::FlatBufferBuilder &fbb,
   const std::string& message,
   protocol::ResponseCode code
-) {
-
-  // Use message instead of tx hash.
-  auto signature = primitives::CreateSignature(fbb, message);
-
-  auto response = protocol::CreateSumeragiResponse(
-    fbb, fbb.CreateString(message),
-    code, signature
-  );
-  fbb.Finish(response);
-  return flatbuffers::BufferRef<protocol::SumeragiResponse>(
-    fbb.GetBufferPointer(), fbb.GetSize()
-  );
-}
+);
 
 } // namespace endpoint
 
 namespace verifier {
-  bool VerifyBlock(const uint8_t* flatbuf, size_t length) {
-    flatbuffers::Verifier verifier(flatbuf, length);
-    return verifier.VerifyBuffer<protocol::Block>(nullptr);
-  }
+bool VerifyBlock(const uint8_t* flatbuf, size_t length);
 } // namespace verifier
 
 } // namespace flatbuffer_service
+
+#endif // IROHA_FLATBUFFER_SERVICE_HPP
