@@ -27,14 +27,16 @@ namespace connection {
 namespace with_sumeragi {
 
 /**
- * unicasts block to a validating peer.
+ * unicast()
+ * @brief unicasts block to a validating peer.
  * @param block - block to consensus.
  * @param index - validating peer's index.
  */
 void unicast(const sumeragi::Block& block, ::peer::Nodes::const_iterator iter);
 
 /**
- * multicasts block to [beginIndex, endIndex) peers.
+ * multicast()
+ * @brief multicasts block to [beginIndex, endIndex) peers.
  * @param block - block to consensus.
  * @param begin - validating peer's iterator except leader (usually next to begin())
  * @param end - validating peer's tail + 1 iterator
@@ -44,9 +46,11 @@ void multicast(const sumeragi::Block& block,
                ::peer::Nodes::const_iterator end);
 
 /**
- * commits block to all peers except sender
+ * commit()
+ * @brief commits block to all peers including sender.
+ * @param block - block to consensus.
  */
-void commit(const sumeragi::Block& block, ::peer::Nodes::const_iterator sender);
+void commit(const sumeragi::Block& block);
 
 } // namespace with_sumeragi
 } // namespace connection

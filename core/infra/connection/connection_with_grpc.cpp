@@ -19,6 +19,8 @@
 #include <consensus/block_builder.hpp> // sumeragi::Block
 #include <infra/config/iroha_config_with_json.hpp> // createChannel()
 #include <membership_service/peer_service.hpp> // ::peer::service::getActivePeerList()
+#include <validator/stateless_validator.hpp> // validator::stateless::receive()
+#include <service/flatbuffer_service.hpp>
 #include <endpoint_generated.h>
 #include <endpoint.grpc.fb.h> // protocol::Sumeragi
 
@@ -54,15 +56,29 @@ class SumeragiServer : public protocol::Sumeragi::Service {
     const flatbuffers::BufferRef<protocol::Block>& request,
     flatbuffers::BufferRef<protocol::SumeragiResponse>* response) {
 
+    // UnPack to sumeragi::Block
+    sumeragi::Block block;
+    block.unpackBlock(request.buf, request.len);
+
     fbbResponse.Clear();
 
-    // UnPack to sumeragi::Block
+    // Test stateless validator
+    // If test succeeded, dispatch block to sumeragi.
+    auto valid = validator::stateless::test(block);
 
-    // Dispatch to stateless validator
+    if (!valid) {
+      const std::string message = "Stateless validation failed";
+      *response = flatbuffer_service::endpoint::CreateSumeragiResponseRef(
+        fbbResponse, message, protocol::ResponseCode::FAIL
+      );
+      return grpc::Status::CANCELLED;
+    }
 
-    // Returns signature (if needed)
-    (void) response; // current sumeragi alg doesn't require this signature.
-
+    // Returns signature
+    const std::string message = "Success receive tx";
+    *response = flatbuffer_service::endpoint::CreateSumeragiResponseRef(
+      fbbResponse, message, protocol::ResponseCode::FAIL
+    );
     return grpc::Status::OK;
   }
 
@@ -91,10 +107,7 @@ public:
                            flatbuffers::BufferRef<protocol::SumeragiResponse> *response) const {
     grpc::ClientContext context;
     flatbuffers::FlatBufferBuilder fbb;
-    auto block_o = block.packOffset(fbb);
-    flatbuffers::BufferRef<protocol::Block> request(
-      fbb.GetBufferPointer(), fbb.GetSize()
-    );
+    auto request = block.packBufferRef(fbb);
     return stub_->Communicate(&context, request, response);
   }
 
@@ -105,7 +118,8 @@ private:
 namespace with_sumeragi {
 
 /**
- * unicasts block to a validating peer.
+ * unicast()
+ * @brief unicasts block to a validating peer.
  * @param block - block to consensus.
  * @param index - validating peer's index.
  */
@@ -129,7 +143,8 @@ void unicast(const sumeragi::Block& block, ::peer::Nodes::const_iterator iter) {
 }
 
 /**
- * multicasts block to [beginIndex, endIndex) peers.
+ * multicast()
+ * @brief multicasts block to [beginIndex, endIndex) peers.
  * @param block - block to consensus.
  * @param begin - validating peer's iterator except leader (usually next to begin())
  * @param end - validating peer's tail + 1 iterator
@@ -143,14 +158,14 @@ void multicast(const sumeragi::Block& block,
 }
 
 /**
- * commits block to all peers except sender
+ * commit()
+ * @brief commits block to all peers including sender.
+ * @param block - block to consensus.
  */
-void commit(const sumeragi::Block& block, ::peer::Nodes::const_iterator sender) {
+void commit(const sumeragi::Block& block) {
   auto peers = ::peer::service::getActivePeerList();
   for (auto iter = peers.begin(); iter != peers.end(); iter++) {
-    if (sender != iter) {
-      unicast(block, iter);
-    }
+    unicast(block, iter);
   }
 }
 
@@ -160,8 +175,6 @@ class ClientService : public protocol::ClientService::Service {
 public:
   ClientService(const std::string& serverIp)
     : stub_(protocol::ClientService::NewStub(createChannel(serverIp))) {}
-
-  //grpc::Status
 
   /**
    * Torii
