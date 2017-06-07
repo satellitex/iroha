@@ -62,7 +62,7 @@ flatbuffers::Offset<protocol::Attachment> random_attachment(
 
 flatbuffers::Offset<protocol::ActionWrapper> random_AccountCreate(
   flatbuffers::FlatBufferBuilder &fbb,
-  std::string const& username = random_string(15));
+  std::string const username = random_alphabets(15));
 
 flatbuffers::Offset<protocol::ActionWrapper> random_AssetCreate(
   flatbuffers::FlatBufferBuilder &fbb);
