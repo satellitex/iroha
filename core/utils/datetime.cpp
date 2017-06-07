@@ -17,19 +17,29 @@
 
 #include "datetime.hpp"
 #include <ctime>
+#include <array> // timestamp
 
 namespace datetime {
-
-std::string unixtime_str() {
-  std::time_t result = std::time(nullptr);
-  return std::to_string(result);
-}
 
 std::uint64_t unixtime() {
   return static_cast<std::uint64_t>(std::time(nullptr));
 }
 
-std::string date_str() {
+TimeStamp unixtimeByteArray() {
+  std::array<uint8_t, BYTE_ARRAY_SIZE> ret;
+  auto t = std::to_string(unixtime());
+  const size_t size = t.size();
+  for (size_t i = 0; i < BYTE_ARRAY_SIZE; i++) {
+    if (BYTE_ARRAY_SIZE < i + size) {
+      ret[i] = 0;
+    } else {
+      ret[i] = (uint8_t)(t[i + size - BYTE_ARRAY_SIZE] - '0');
+    }
+  }
+  return ret;
+}
+
+std::string dateStr() {
   std::time_t result = std::time(nullptr);
   return std::asctime(std::localtime(&result));
 }

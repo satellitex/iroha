@@ -20,14 +20,18 @@
 
 #include <cstdint>
 #include <string>
+#include <array>
 
 namespace datetime {
 
+constexpr size_t BYTE_ARRAY_SIZE = 25;
+using TimeStamp = std::array<uint8_t, BYTE_ARRAY_SIZE>;
+
 std::uint64_t unixtime();
 
-std::string unixtime_str();
+TimeStamp unixtimeByteArray();
 
-std::string date_str();
+std::string dateStr();
 
 std::string unixtime2date(std::int64_t unixtime);
 
