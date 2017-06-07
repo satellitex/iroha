@@ -20,5 +20,6 @@ union AnyAsset {
 table Asset {
   name: string;
   uuid: string;
+  target_domain: string (required);
   asset:  AnyAsset  (required);
 }
