@@ -29,9 +29,12 @@ target_link_libraries(ip_tools
 )
 
 ###########################
-#        ip_tools         #
+#     random_generator    #
 ###########################
 add_library(random_generator STATIC random_generator.cpp)
 target_link_libraries(random_generator
-
+  hash
+  base64
+  signature
+  flatbuffers
 )
