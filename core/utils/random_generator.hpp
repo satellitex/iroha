@@ -23,6 +23,7 @@
 #include <vector>
 #include <random>
 #include <cstdint>
+#include <crypto/signature.hpp> // signature::KeyPair
 
 namespace random_generator {
 
@@ -63,6 +64,22 @@ flatbuffers::Offset<protocol::Attachment> random_attachment(
 flatbuffers::Offset<protocol::ActionWrapper> random_AccountCreate(
   flatbuffers::FlatBufferBuilder &fbb,
   std::string const username = random_alphabets(15));
+
+flatbuffers::Offset<protocol::ComplexAsset> random_ComplexAsset(
+  flatbuffers::FlatBufferBuilder &fbb);
+
+flatbuffers::Offset<protocol::Asset> random_AssetCurrency(
+  flatbuffers::FlatBufferBuilder &fbb);
+
+flatbuffers::Offset<protocol::Asset> random_AssetComplexAsset(
+  flatbuffers::FlatBufferBuilder &fbb);
+
+flatbuffers::Offset<protocol::Asset> random_Asset(
+  flatbuffers::FlatBufferBuilder &fbb,
+  protocol::AnyAsset anyAsset);
+
+flatbuffers::Offset<protocol::Asset> random_Asset(
+  flatbuffers::FlatBufferBuilder &fbb);
 
 flatbuffers::Offset<protocol::ActionWrapper> random_AssetCreate(
   flatbuffers::FlatBufferBuilder &fbb);

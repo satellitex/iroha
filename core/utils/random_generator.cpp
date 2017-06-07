@@ -53,15 +53,15 @@ uint64_t random_value_64(uint64_t min, uint64_t max)
 char random_alphabet()
 {
   const std::string buf = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const int size = buf.size();
-  return buf[random_value_32(0, size - 1)];
+  const size_t size = buf.size();
+  return buf[random_value_32(0, (int)size - 1)];
 }
 
 char random_alnum()
 {
   const std::string buf = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const int size = buf.size();
-  return buf[random_value_32(0, size - 1)];
+  const size_t size = buf.size();
+  return buf[random_value_32(0, (int)size - 1)];
 }
 
 std::string random_string(size_t length, std::function<char()> const& char_gen)
@@ -242,16 +242,61 @@ flatbuffers::Offset<protocol::Currency> random_Curerncy(
   );
 }
 
-flatbuffers::Offset<protocol::ActionWrapper> random_AssetCreate(
-  flatbuffers::FlatBufferBuilder &fbb,
-  protocol::AnyAsset asset_type, flatbuffers::Offset<void> asset_content)
+flatbuffers::Offset<protocol::ComplexAsset> random_ComplexAsset(
+  flatbuffers::FlatBufferBuilder &fbb)
 {
-  auto asset = protocol::CreateAsset(
+  return protocol::CreateComplexAsset(fbb, fbb.CreateVector(random_bytes(200)));
+}
+
+flatbuffers::Offset<protocol::Asset> random_AssetCurrency(
+  flatbuffers::FlatBufferBuilder &fbb)
+{
+  return protocol::CreateAsset(
     fbb, fbb.CreateString(random_alnums(10)/*random_asset_id()*/),
     fbb.CreateString(random_alnums(32)), fbb.CreateString(random_full_domain_text()),
-    asset_type, asset_content
+    protocol::AnyAsset::Currency, random_Curerncy(fbb).Union()
   );
+}
 
+flatbuffers::Offset<protocol::Asset> random_AssetComplexAsset(
+  flatbuffers::FlatBufferBuilder &fbb)
+{
+  return protocol::CreateAsset(
+    fbb, fbb.CreateString(random_alnums(10)/*random_asset_id()*/),
+    fbb.CreateString(random_alnums(32)), fbb.CreateString(random_full_domain_text()),
+    protocol::AnyAsset::ComplexAsset, random_ComplexAsset(fbb).Union()
+  );
+}
+
+flatbuffers::Offset<protocol::Asset> random_Asset(
+  flatbuffers::FlatBufferBuilder &fbb,
+  protocol::AnyAsset anyAsset)
+{
+  switch (anyAsset) {
+    case protocol::AnyAsset::Currency: {
+      return random_AssetCurrency(fbb);
+    }
+    case protocol::AnyAsset::ComplexAsset: {
+      return random_AssetComplexAsset(fbb);
+    }
+    default: {
+      return 0;
+    }
+  }
+}
+
+flatbuffers::Offset<protocol::Asset> random_Asset(
+  flatbuffers::FlatBufferBuilder &fbb) {
+  return random_Asset(
+    fbb, static_cast<protocol::AnyAsset>(
+    random_value_32(static_cast<int>(protocol::AnyAsset::MIN) + 1,
+                    static_cast<int>(protocol::AnyAsset::MAX))));
+}
+
+flatbuffers::Offset<protocol::ActionWrapper> random_AssetCreate(
+  flatbuffers::FlatBufferBuilder &fbb)
+{
+  auto asset = random_Asset(fbb);
   auto asset_create = protocol::CreateAssetCreate(fbb, asset);
   auto domain_action = protocol::CreateDomainActionWrapper(
     fbb, protocol::DomainAction::AssetCreate, asset_create.Union()
