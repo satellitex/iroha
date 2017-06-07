@@ -67,12 +67,15 @@ bool test(const sumeragi::Block& block) {
 
   // verify block.created (simple check)
   validator.addValidator([](const sumeragi::Block& block) -> bool {
-    return block.created <= datetime::unixtime();
+    return block.created <= datetime::unixtimeByteArray();
   });
 
   auto valid = validator.test(block);
 
   if (valid) {
+    if (!dispatchToSumeragi) {
+      throw std::runtime_error("Not callable 'dispatchToSumeragi'. Set receive() in sumeragi");
+    }
     dispatchToSumeragi(block);
     return true;
   }
