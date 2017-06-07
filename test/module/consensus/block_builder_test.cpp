@@ -19,6 +19,8 @@
 #include <consensus/block_builder.hpp>
 #include <main_generated.h> // pack(), unpack()
 #include <utils/datetime.hpp> // TimeStamp (type alias, no need to link datetime.cpp)
+#include <builder/transaction_builder.hpp>
+#include <crypto/signature.hpp> // generateKey
 
 using namespace sumeragi;
 
@@ -68,19 +70,40 @@ TEST(block_builder_test, no_tx) {
     ASSERT_STREQ(e.what(), "doesn't contain any tx");
   }
 }
-
-TEST(block_builder_test, pack_unpack) {
 /*
-  flatbuffers::FlatBufferBuilder fbb;
-  auto acts = std::vector<flatbuffers::Offset<protocol::ActionWrapper>> {
-    generator::random_AccountAddAccount(fbb)
-  };
-  auto att = generator::random_attachment(fbb);
-  auto tx = generator::random_tx(fbb, acts, att);
+TEST(block_builder_test, pack_unpack) {
 
-  auto txw_o = protocol::CreateTransactionWrapperDirect(fbb, &tx);
-  fbb.Finish(txw_o);
-*/
+
+     creator: Signature (required);
+  sigs:    [SignatureWithState];
+  created: ulong;   // 64 bit(8 bytes)
+  nonce:   uint;    // 32 bit(4 bytes)
+
+  // union vector is supported in C++ only.
+  // And, Transaction contains array of objects Action. So, Action needs to be wrapped by ActionWrapper.
+  // https://github.com/google/flatbuffers/commit/b0752e179bdbae516125cccacd7aebcfd83033a9
+  actions: [ActionWrapper] (required);
+
+  attachment: Attachment;
+
+  {
+    builder::SignatureHolder signatureHolder;
+    auto keyPair = signature::generateKeyPair();
+    signatureHolder.pubkey = keyPair.publicKey;
+    signatureHolder.sig = signature::sign("message", signatureHolder.pubkey, signatureHolder.sig);
+    flatbuffers::FlatBufferBuilder sbb;
+    auto sigOffset = builder::SignatureBuilder(signatureHolder).buildOffset(sbb);
+    sbb.Finish(sigOffset);
+  }
+  auto sigRoot = flatbuffers::GetRoot<protocol::Signature>(sbb.GetBufferPointer());
+
+  std::vector<protocol::Signature> sigs { *sigRoot, *sigRoot, *sigRoot };
+
+  flatbuffers::FlatBufferBuilder fbb;
+  builder::TransactionBuilder()
+    .setCreator(*sigRoot)
+    .setSigs(std::move(sigs))
+    .setNonce(1234567)
   std::vector<std::vector<uint8_t>> txs {
     {}
   };
@@ -127,3 +150,5 @@ TEST(block_builder_test, pack_unpack) {
   d_block.unpackBlock(blockBuf);
   //ASSERT_EQ(block, d_block);
 }
+
+*/
