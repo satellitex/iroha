@@ -160,10 +160,13 @@ inline flatbuffers::Offset<protocol::Attachment> random_attachment(
     fbb.CreateVector(random_bytes(50)));
 }
 
-inline flatbuffers::Offset<protocol::ActionWrapper> random_AccountAddAccount(
-  flatbuffers::FlatBufferBuilder &fbb) {
-  auto act = protocol::CreateAccountAddAccount(
-    fbb, fbb.CreateVector(random_signatures(fbb, 5)), random_quorum(3)
+inline flatbuffers::Offset<protocol::ActionWrapper> random_AccountCreate(
+  flatbuffers::FlatBufferBuilder &fbb,
+  std::string const& username = random_string(15)
+) {
+  protocol::CreateAccountCreate(fbb.CreateString(username))
+  auto act = protocol::CreateAccountCreate(
+  //  fbb, fbb.CreateVector(random_signatures(fbb, 5)), random_quorum(3)
   );
   return protocol::CreateActionWrapper(
     fbb, protocol::Action::AccountAddAccount, act.Union()
