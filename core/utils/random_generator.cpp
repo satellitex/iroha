@@ -15,20 +15,18 @@
  * limitations under the License.
  */
 
-#ifndef IROHA_TX_GENERATOR_H
-#define IROHA_TX_GENERATOR_H
-
 #include <flatbuffers/flatbuffers.h>
 #include <main_generated.h>
 #include <vector>
 #include <random>
-#include <crypto/hash.hpp>
-#include <crypto/base64.hpp>
-#include <crypto/signature.hpp>
+#include <crypto/hash.hpp> // sha3_256
+#include <crypto/base64.hpp> // encode
+#include <crypto/signature.hpp> // sign
 
-// This is for test and header only. It is better to crate tx_generator.cpp in tools.
+#include "random_generator.hpp"
 
-// #include <utils/random.hpp>
+namespace random_generator {
+
 std::random_device seed_gen;
 std::mt19937    rnd_gen_32(seed_gen());
 std::mt19937_64 rnd_gen_64(seed_gen());
@@ -47,25 +45,23 @@ uint64_t random_value_64(uint64_t min, uint64_t max) {
   return dist(rnd_gen_64);
 }
 
-namespace generator {
-
 constexpr int MinQuorum = 1;
 constexpr int MaxQuorum = 32;
 constexpr size_t MaxStringSize = 1e9;
 
-inline char random_alphabet() {
+char random_alphabet() {
   const std::string buf = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const int size = buf.size();
   return buf[random_value_32(0, size - 1)];
 }
 
-inline char random_alnum() {
+char random_alnum() {
   const std::string buf = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const int size = buf.size();
   return buf[random_value_32(0, size - 1)];
 }
 
-inline std::string random_string(size_t length, std::function<char()> const& char_gen) {
+std::string random_string(size_t length, std::function<char()> const& char_gen) {
   std::string ret;
   for (size_t i = 0; i < length; i++) {
     ret += char_gen();
@@ -73,30 +69,30 @@ inline std::string random_string(size_t length, std::function<char()> const& cha
   return ret;
 }
 
-inline std::string random_alphabets(size_t length) {
+std::string random_alphabets(size_t length) {
   assert(length <= MaxStringSize);
   return random_string(length, random_alphabet);
 }
 
-inline std::string random_alnums(size_t length) {
+std::string random_alnums(size_t length) {
   return random_string(length, random_alnum);
 }
 
-inline std::vector<std::uint8_t> random_bytes(size_t length) {
+std::vector<std::uint8_t> random_bytes(size_t length) {
   std::vector<uint8_t> ret;
   for (size_t i = 0; i < length; i++) {
-    ret.push_back(random_value_32(0, (1 << 8) - 1));
+    ret.push_back(random_value_32<uint8_t>(0, (1 << 8) - 1));
   }
   return ret;
 }
 
-inline std::string random_sha3_256() {
-  auto raw_value = random_alphabets(random_value_32(1, 50));
+std::string random_sha3_256() {
+  auto raw_value = random_alphabets((size_t)random_value_32(1, 50));
   return hash::sha3_256_hex(raw_value);
 }
 
-inline std::string random_base64() {
-  auto raw_value = random_alphabets(random_value_32(1, 50));
+std::string random_base64() {
+  auto raw_value = random_alphabets((size_t)random_value_32(1, 50));
   std::vector<unsigned char> value;
   for (auto e: raw_value) {
     value.push_back(e);
@@ -104,20 +100,20 @@ inline std::string random_base64() {
   return base64::encode(value);
 }
 
-inline std::string random_asset_id() {
+std::string random_asset_id() {
   return random_alnums(10) + "#"
          + random_alnums(5) + "." + random_alnums(3) + "." + random_alnums(2);
 }
 
-inline uint64_t random_time() {
+uint64_t random_time() {
   return random_value_64(0ULL, 1ULL << 63);
 }
 
-inline uint32_t random_nonce() {
-  return random_value_32(0, 1 << 30);
+uint32_t random_nonce() {
+  return (uint32_t)random_value_32(0, 1 << 30);
 }
 
-inline std::vector<uint8_t> random_signature(signature::KeyPair const& key_pair) {
+std::vector<uint8_t> random_signature(signature::KeyPair const& key_pair) {
   auto message = random_alphabets(50);
   auto res_str = signature::sign(message, key_pair);
   std::vector<uint8_t> res;
@@ -126,12 +122,12 @@ inline std::vector<uint8_t> random_signature(signature::KeyPair const& key_pair)
   return res;
 }
 
-inline uint8_t random_quorum(int max = MaxQuorum) {
+uint8_t random_quorum(int max = MaxQuorum) {
   assert(MinQuorum <= max);
-  return random_value_32(MinQuorum, max);
+  return (uint8_t)random_value_32(MinQuorum, max);
 }
 
-inline flatbuffers::Offset<protocol::Signature> random_signature(
+flatbuffers::Offset<protocol::Signature> random_signature(
   flatbuffers::FlatBufferBuilder &fbb) {
   auto key_pair = signature::generateKeyPair();
   auto pubkey = base64::encode(key_pair.publicKey);
@@ -144,7 +140,7 @@ inline flatbuffers::Offset<protocol::Signature> random_signature(
   );
 }
 
-inline std::vector<flatbuffers::Offset<protocol::Signature>> random_signatures(
+std::vector<flatbuffers::Offset<protocol::Signature>> random_signatures(
   flatbuffers::FlatBufferBuilder &fbb, int length = 10) {
   std::vector<flatbuffers::Offset<protocol::Signature>> ret;
   for (int i = 0; i < length; i++) {
@@ -153,27 +149,27 @@ inline std::vector<flatbuffers::Offset<protocol::Signature>> random_signatures(
   return ret;
 }
 
-inline flatbuffers::Offset<protocol::Attachment> random_attachment(
+flatbuffers::Offset<protocol::Attachment> random_attachment(
   flatbuffers::FlatBufferBuilder &fbb) {
   return protocol::CreateAttachment(
     fbb, fbb.CreateString(random_alphabets(50)),
     fbb.CreateVector(random_bytes(50)));
 }
 
-inline flatbuffers::Offset<protocol::ActionWrapper> random_AccountCreate(
+flatbuffers::Offset<protocol::ActionWrapper> random_AccountCreate(
   flatbuffers::FlatBufferBuilder &fbb,
   std::string const& username = random_string(15)
 ) {
   protocol::CreateAccountCreate(fbb.CreateString(username))
   auto act = protocol::CreateAccountCreate(
-  //  fbb, fbb.CreateVector(random_signatures(fbb, 5)), random_quorum(3)
+    //  fbb, fbb.CreateVector(random_signatures(fbb, 5)), random_quorum(3)
   );
   return protocol::CreateActionWrapper(
     fbb, protocol::Action::AccountAddAccount, act.Union()
   );
 }
 
-inline flatbuffers::Offset<protocol::ActionWrapper> random_AssetCreate(
+flatbuffers::Offset<protocol::ActionWrapper> random_AssetCreate(
   flatbuffers::FlatBufferBuilder &fbb) {
   auto act = protocol::CreateAssetCreate(
     fbb, fbb.CreateString(random_asset_id())
@@ -183,7 +179,7 @@ inline flatbuffers::Offset<protocol::ActionWrapper> random_AssetCreate(
   );
 }
 
-inline std::vector<uint8_t> random_tx(
+std::vector<uint8_t> random_tx(
   flatbuffers::FlatBufferBuilder &fbb,
   std::vector<flatbuffers::Offset<protocol::ActionWrapper>> actions,
   flatbuffers::Offset<protocol::Attachment> attachment) {
@@ -233,8 +229,8 @@ std::string toString(protocol::Signature const& signature,
 }
 
 std::string toString(flatbuffers::Vector<
-  flatbuffers::Offset<protocol::Signature>> const& sigs,
-  std::string const& name, int indent = 0
+                     flatbuffers::Offset<protocol::Signature>> const& sigs,
+                     std::string const& name, int indent = 0
 ) {
   std::string res;
   res += tab(indent) + name + "[\n";
@@ -315,4 +311,4 @@ std::string toString(const protocol::Transaction& tx) {
 
 }  // namespace dump
 
-#endif //IROHA_TX_GENERATOR_H
+#endif //IROHA_TX_GENERATOR_HPP

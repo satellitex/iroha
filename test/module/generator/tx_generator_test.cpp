@@ -16,7 +16,7 @@
  */
 
 #include <gtest/gtest.h>
-#include <transaction_generated.h>
+#include <main_generated.h>
 #include "tx_generator.h"
 
 /*
@@ -45,5 +45,5 @@ TEST(tx_generator_test, CMD) { \
   }); \
 }
 
-DEF_TEST_CMD(AccountAddAccount)
+DEF_TEST_CMD(AccountCreate)
 DEF_TEST_CMD(AssetCreate)

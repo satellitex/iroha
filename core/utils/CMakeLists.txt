@@ -27,3 +27,11 @@ add_library(ip_tools STATIC ip_tools.cpp)
 target_link_libraries(ip_tools
   logger
 )
+
+###########################
+#        ip_tools         #
+###########################
+add_library(random_generator STATIC random_generator.cpp)
+target_link_libraries(random_generator
+
+)

@@ -19,7 +19,7 @@
 #include <consensus/block_builder.hpp>
 #include <main_generated.h> // pack(), unpack()
 #include <utils/datetime.hpp> // TimeStamp (type alias, no need to link datetime.cpp)
-#include <builder/transaction_builder.hpp>
+//#include <builder/transaction_builder.hpp>
 #include <crypto/signature.hpp> // generateKey
 
 using namespace sumeragi;
