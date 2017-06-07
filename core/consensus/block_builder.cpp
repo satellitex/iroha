@@ -17,10 +17,12 @@
 
 #include <utils/datetime.hpp>
 #include "block_builder.hpp"
-#include <stdexcept>
+#include <stdexcept> // runtime_error
+#include <array> // timestamp
 
 #include <flatbuffers/flatbuffers.h>
-#include <main_generated.h> // pack()
+#include <main_generated.h>
+#include <service/flatbuffer_service.hpp> // verifier::VerifyBlock
 
 namespace sumeragi {
 
@@ -31,7 +33,14 @@ flatbuffers::Offset<protocol::Signature> Signature::packOffset(
   );
 }
 
-flatbuffers::Offset<protocol::Block> Block::packOffset(flatbuffers::FlatBufferBuilder& fbb) const {
+void Signature::unpackSignature(const std::vector<uint8_t>& flatbuf) {
+  auto root = flatbuffers::GetRoot<protocol::Signature>(flatbuf.data());
+  auto pk = std::vector<uint8_t>(root->pubkey()->begin(), root->pubkey()->end());
+  auto sig = std::vector<uint8_t>(root->sig()->begin(), root->sig()->end());
+  *this = sumeragi::Signature(std::move(pk), std::move(sig));
+}
+
+flatbuffers::BufferRef<protocol::Block> Block::packBufferRef(flatbuffers::FlatBufferBuilder& fbb) const {
   // Create tx wrapper offset vector
   std::vector<flatbuffers::Offset<protocol::TransactionWrapper>> txs_o;
   for (const auto& tx: txs) {
@@ -48,54 +57,99 @@ flatbuffers::Offset<protocol::Block> Block::packOffset(flatbuffers::FlatBufferBu
     peer_sigs_o.push_back(sig.packOffset(fbb));
   }
 
-  return protocol::CreateBlock(
+  auto t = datetime::unixtimeByteArray();
+  std::vector<uint8_t> vstamp(t.begin(), t.end());
+
+  auto offset = protocol::CreateBlock(
     fbb, fbb.CreateVector(txs_o),
     fbb.CreateVector(peer_sigs_o),
     /* prev_hash */ 0,
     /* length */ 0,
     /* merkle_root */ 0,
     /* height */ 0,
-    datetime::unixtime(),
+    fbb.CreateVector(vstamp),
     protocol::BlockState::UNCOMMITTED
   );
+
+  fbb.Finish(offset);
+  return flatbuffers::BufferRef<protocol::Block>(
+    fbb.GetBufferPointer(), fbb.GetSize()
+  );
+}
+
+void Block::unpackBlock(const uint8_t* flatbuf, size_t length) {
+  auto valid = flatbuffer_service::verifier::VerifyBlock(flatbuf, length);
+  if (!valid) {
+    throw std::runtime_error("Block validation failed");
+  }
+
+  auto root = flatbuffers::GetRoot<protocol::Block>(flatbuf);
+  std::vector<std::vector<uint8_t>> txs;
+  for (const auto& txw: *root->txs()) {
+    txs.emplace_back(
+      txw->tx()->begin(),
+      txw->tx()->end()
+    );
+  }
+  *this = Block {
+    std::move(txs),
+    {},
+    datetime::unixtimeByteArray(),
+    sumeragi::BlockState::UNCOMMITTED
+  };
+}
+
+void Block::unpackBlock(const std::vector<uint8_t>& flatbuf) {
+  unpackBlock(flatbuf.data(), flatbuf.size());
 }
 
 BlockBuilder::BlockBuilder() {}
 BlockBuilder& BlockBuilder::setTxs(const std::vector<std::vector<uint8_t>>& txs)
 {
-  if (txs.size() >= MaxTxs)
+  if (txs.size() > MAX_TXS) {
     throw std::runtime_error("overflow txs.size");
+  }
+  if (txs.empty()) {
+    throw std::runtime_error("doesn't contain any tx");
+  }
   txs_ = txs;
-  buildStatus_ |= BuildStatus::initWithTxs;
+  buildStatus_ |= BuildStatus::INIT_WITH_TXS;
   return *this;
 }
 
 BlockBuilder& BlockBuilder::setBlock(const Block& block)
 {
   block_ = block;
-  buildStatus_ |= BuildStatus::initWithBlock;
+  buildStatus_ |= BuildStatus::INIT_WITH_BLOCK;
   return *this;
 }
 
 BlockBuilder& BlockBuilder::addSignature(const Signature& sig) {
-  if (buildStatus_ & initWithBlock == 0)
+  if (!(buildStatus_ & INIT_WITH_BLOCK)) {
     throw std::runtime_error("not initialized with setBlock()");
-  if (buildStatus_ & BuildStatus::withSignature)
+  }
+  if (buildStatus_ & BuildStatus::ATTACHED_SIGNATURE) {
     throw std::runtime_error("duplicate addSignature()");
+  }
   peer_sigs_.push_back(sig);
   return *this;
 }
 
 Block BlockBuilder::build() {
 
-  if (buildStatus_ & BuildStatus::initWithTxs) {
-    if (buildStatus_ & BuildStatus::completeFromTxs != buildStatus_) {
+  if (buildStatus_ & BuildStatus::INIT_WITH_TXS) {
+    if (buildStatus_ & BuildStatus::COMPLETE_FROM_TXS != buildStatus_) {
       throw std::runtime_error("not completed init with txs");
     }
-    return Block {txs_, {}, datetime::unixtime(), BlockState::uncommitted};
+    return Block {
+      std::move(txs_),
+      {},
+      datetime::unixtimeByteArray(),
+      BlockState::UNCOMMITTED
+    };
   }
-  else if (buildStatus_ & BuildStatus::initWithBlock) {
-    if (buildStatus_ & BuildStatus::completeFromBlock != buildStatus_) {
+  else if (buildStatus_ & BuildStatus::INIT_WITH_BLOCK) {
+    if (buildStatus_ & BuildStatus::COMPLETE_FROM_BLOCK != buildStatus_) {
       throw std::runtime_error("not completed init with block");
     }
     return block_;
@@ -106,11 +160,11 @@ Block BlockBuilder::build() {
 }
 
 Block BlockBuilder::buildCommit() {
-  if (buildStatus_ & BuildStatus::initWithBlock) {
-    if (buildStatus_ != BuildStatus::commit) {
-      throw std::runtime_error("");
+  if (buildStatus_ & BuildStatus::INIT_WITH_BLOCK) {
+    if (buildStatus_ != BuildStatus::COMMITTED) {
+      throw std::runtime_error("should be committed build status");
     }
-    block_.state = BlockState::committed;
+    block_.state = BlockState::COMMITTED;
     return block_;
   }
 }

@@ -20,10 +20,10 @@
 
 #include <utils/datetime.hpp>
 #include <vector>
-#include <main_generated.h>
+#include <main_generated.h> // protocol::Block, protocol::Signature
 
-// Document's required size = 2^32 - 1
-constexpr int MaxTxs = 2 * 1e7; // (1LL << 32) - 1;
+// FIXME: Document's required size = 2^32 - 1
+constexpr unsigned MAX_TXS = (unsigned)(2 * 1e7); // (1LL << 32) - 1;
 
 namespace sumeragi {
 
@@ -31,21 +31,43 @@ struct Signature {
   std::vector<uint8_t> publicKey;
   std::vector<uint8_t> signature;
 
+  Signature() = default;
+  Signature(std::vector<uint8_t> pubkey, std::vector<uint8_t> signature)
+    : publicKey(std::move(pubkey)), signature(std::move(signature))
+  {}
+
   flatbuffers::Offset<protocol::Signature> packOffset(flatbuffers::FlatBufferBuilder& fbb) const;
+  void unpackSignature(const std::vector<uint8_t>& flatbuf);
 };
 
 enum class BlockState {
-  committed,
-  uncommitted
+  COMMITTED,
+  UNCOMMITTED
 };
 
 struct Block {
   std::vector<std::vector<uint8_t>> txs;
   std::vector<Signature> peer_sigs;
-  uint64_t created; // timestamp
+  std::array<uint8_t, datetime::BYTE_ARRAY_SIZE> created;
   BlockState state;
 
-  flatbuffers::Offset<protocol::Block> packOffset(flatbuffers::FlatBufferBuilder& fbb) const;
+  Block(
+    std::vector<std::vector<uint8_t>> txs,
+    std::vector<Signature> peer_sigs,
+    std::array<uint8_t, datetime::BYTE_ARRAY_SIZE> created,
+    BlockState state
+  )
+    : txs(std::move(txs)),
+      peer_sigs(std::move(peer_sigs)),
+      created(std::move(created)),
+      state(state)
+  {}
+
+  Block() = default;
+
+  flatbuffers::BufferRef<protocol::Block> packBufferRef(flatbuffers::FlatBufferBuilder& fbb) const;
+  void unpackBlock(const std::vector<uint8_t>& flatbuf);
+  void unpackBlock(const uint8_t* flatbuf, size_t length);
 };
 
 class BlockBuilder {
@@ -60,13 +82,13 @@ public:
 private:
 
   enum BuildStatus: uint8_t {
-    initWithTxs       = 1 << 0,
-    initWithBlock     = 1 << 1,
-    withSignature     = 1 << 2,
-    completeFromTxs   = initWithTxs,
-    completeFromBlock = initWithBlock
-                        | withSignature,
-    commit            = initWithBlock,
+    INIT_WITH_TXS       = 1 << 0,
+    INIT_WITH_BLOCK     = 1 << 1,
+    ATTACHED_SIGNATURE  = 1 << 2,
+    COMPLETE_FROM_TXS   = INIT_WITH_TXS,
+    COMPLETE_FROM_BLOCK = INIT_WITH_BLOCK
+                        | ATTACHED_SIGNATURE,
+    COMMITTED           = INIT_WITH_BLOCK
   };
 
   int buildStatus_ = 0;

@@ -17,38 +17,113 @@
 
 #include <gtest/gtest.h>
 #include <consensus/block_builder.hpp>
+#include <main_generated.h> // pack(), unpack()
+#include <utils/datetime.hpp> // TimeStamp (type alias, no need to link datetime.cpp)
 
 using namespace sumeragi;
 
 TEST(block_builder_test, to_block) {
 
-  std::vector<std::vector<uint8_t>> txs;
+  std::vector<std::vector<uint8_t>> txs(1);
 
   auto block = BlockBuilder()
     .setTxs(txs)
     .build();
 
-  assert(block.peer_sigs.size() == 0);
-  assert(block.txs.size() == txs.size());
-  assert(block.state == BlockState::uncommitted);
+  ASSERT_EQ(block.peer_sigs.size(), 0);
+  ASSERT_EQ(block.txs.size(), txs.size());
+  ASSERT_EQ(block.state, BlockState::UNCOMMITTED);
+}
+
+TEST(block_builder_test, limit_capacity) {
+  std::vector<std::vector<uint8_t>> txs(MAX_TXS);
+
+  ASSERT_NO_THROW({
+    auto block = BlockBuilder()
+      .setTxs(txs)
+      .build();
+  });
 }
 
 TEST(block_builder_test, over_capacity) {
-//  std::vector<byte_array_t> txs(1LL << 32); // but block can have maximum tx size is 2^32-1. over!
-  std::vector<std::vector<uint8_t>> txs(MaxTxs);
+  std::vector<std::vector<uint8_t>> txs(MAX_TXS + 1);
 
-  ASSERT_THROW({
-  auto block = BlockBuilder()
-    .setTxs(txs)
-    .build();
-  }, std::runtime_error);
+  try {
+    auto block = BlockBuilder()
+      .setTxs(txs)
+      .build();
+  } catch (std::runtime_error& e) {
+    ASSERT_STREQ(e.what(), "overflow txs.size");
+  }
 }
 
-TEST(block_builder_test, no_signature) {
-  std::vector<std::vector<uint8_t>> txs; // None
-  auto block = sumeragi::BlockBuilder()
-    .setTxs(txs)
-    .build();
+TEST(block_builder_test, no_tx) {
+  std::vector<std::vector<uint8_t>> txs;
 
-  assert(block.txs.size() == 0); // ToDo Should we think none?
+  try {
+    auto block = sumeragi::BlockBuilder()
+      .setTxs(txs)
+      .build();
+  } catch (std::runtime_error& e) {
+    ASSERT_STREQ(e.what(), "doesn't contain any tx");
+  }
+}
+
+TEST(block_builder_test, pack_unpack) {
+/*
+  flatbuffers::FlatBufferBuilder fbb;
+  auto acts = std::vector<flatbuffers::Offset<protocol::ActionWrapper>> {
+    generator::random_AccountAddAccount(fbb)
+  };
+  auto att = generator::random_attachment(fbb);
+  auto tx = generator::random_tx(fbb, acts, att);
+
+  auto txw_o = protocol::CreateTransactionWrapperDirect(fbb, &tx);
+  fbb.Finish(txw_o);
+*/
+  std::vector<std::vector<uint8_t>> txs {
+    {}
+  };
+
+  const std::vector<uint8_t> pubkey {'p', 'k'};
+  const std::vector<uint8_t> signature {'s', 'k'};
+  const datetime::TimeStamp tstamp {1, 2, 3};
+  std::vector<sumeragi::Signature> peer_sigs {
+    sumeragi::Signature(std::move(pubkey), std::move(signature))
+  };
+  sumeragi::Block block(
+    txs, peer_sigs, tstamp, sumeragi::BlockState::COMMITTED
+  );
+
+  flatbuffers::FlatBufferBuilder fbb;
+  auto bufferRef = block.packBufferRef(fbb);
+  auto root = bufferRef.GetRoot();
+
+  // TODO: Verify txs. Use txbuilder.
+  //std::vector<std::vector<uint8_t>> d_txs;
+  //ASSERT_EQ(txs, d_txs);
+
+  std::vector<sumeragi::Signature> d_peer_sigs {
+
+  };
+  //ASSERT_EQ(peer_sigs, d_peer_sigs);
+
+  std::vector<uint8_t> d_tstamp(
+    root->created()->begin(), root->created()->end()
+  );
+  std::vector<uint8_t> vtstamp(
+    tstamp.begin(), tstamp.end()
+  );
+  //ASSERT_EQ(d_tstamp, vtstamp);
+
+  ASSERT_GT(static_cast<int>(protocol::BlockState::COMMITTED), 0);
+  ASSERT_EQ(root->block_state(), protocol::BlockState::COMMITTED);
+
+  std::vector<uint8_t> blockBuf(
+    bufferRef.buf, bufferRef.buf + bufferRef.len
+  );
+
+  sumeragi::Block d_block;
+  d_block.unpackBlock(blockBuf);
+  //ASSERT_EQ(block, d_block);
 }
