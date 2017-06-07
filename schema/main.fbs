@@ -16,7 +16,7 @@ table Block {
   length:       uint;
   merkle_root:  [ubyte] (required);
   height:       ulong;
-  created:      ulong;
+  created:      [ubyte] (required);
   block_state:  BlockState;
 }
 
