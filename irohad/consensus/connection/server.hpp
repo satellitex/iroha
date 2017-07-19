@@ -20,14 +20,10 @@ limitations under the License.
 namespace consensus {
   namespace connection {
 
-    void receive(const std::function<void(const iroha::protocol::Block&)>&);
 
-    class SumeragiService final
-      : public iroha::protocol::SumeragiService::Service {
+    class SumeragiServer {
     public:
-      grpc::Status Verify(
-        grpc::ServerContext* context, const ::iroha::protocol::Block* request,
-        iroha::protocol::VerifyResponse* response);
+      receive(const Block& block);
     };
 
   }  // namespace connection

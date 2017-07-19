@@ -31,6 +31,11 @@ namespace consensus {
 
   void panic(const iroha::protocol::Block &block);
 
+  void observe();
 
-};      // namespace sumeragi
+
+  // after commit handle
+  void commitHandle(const Block &block);
+
+};      // namespace consensus
 #endif  // CORE_CONSENSUS_SUMERAGI_HPP_

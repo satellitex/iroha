@@ -25,11 +25,8 @@ namespace consensus {
 
     class SumeragiClient {
     public:
-      SumeragiClient(const std::string& ip, int port);
-      iroha::protocol::VerifyResponse Verify(const iroha::protocol::Block&);
+      void send(std::string ip, const Block& block);
     private:
-      grpc::ClientContext context_;
-      std::unique_ptr<iroha::protocol::SumeragiService::Stub> stub_;
     };
 
   }  // namespace connection
