@@ -23,32 +23,32 @@
 
 #include <string>
 
-namespace iroha{
+// TODO
 
-// forward declarations
-struct PostgresConnection;
-struct Connection;
-struct Context;
+namespace main {
+  namespace config {
 
+    // forward declarations
+    struct PostgresConnection;
+    struct Connection;
+    struct Context;
 
-struct Context{
-  PostgresConnection wsv;
-  Connection index;
-  Connection ordering;
-};
+    struct Context {
+      PostgresConnection wsv;
+      Connection index;
+      Connection ordering;
+    };
 
+    struct Connection {
+      std::string host;
+      uint16_t port;
+    };
 
-struct Connection {
-  std::string host;
-  uint16_t port;
-};
-
-
-struct PostgresConnection: public Connection {
-  std::string user;
-  std::string password;
-};
-
+    struct PostgresConnection : public Connection {
+      std::string user;
+      std::string password;
+    };
+  }
 }
 
-#endif //IROHA_CONTEXT_H
+#endif  // IROHA_CONTEXT_H

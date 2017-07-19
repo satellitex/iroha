@@ -19,49 +19,50 @@ limitations under the License.
 
 #include <main/config/config.hpp>
 
-#include <random>
 #include <fstream>
+#include <random>
 
-namespace common {
+namespace main {
 
-    namespace config {
-        using namespace rapidjson;
+  namespace config {
+    using namespace rapidjson;
 
-        ConfigLoader::ConfigLoader(const std::string& file_name){
-            std::ifstream ifs(file_name);
-            if(ifs.is_open()){
-                IStreamWrapper isw(ifs);
-                doc.ParseStream(isw);
-                if(doc.HasParseError()){
-                    throw std::runtime_error("parse error");
-                }
-            }
+    ConfigLoader::ConfigLoader(const std::string& file_name) {
+      std::ifstream ifs(file_name);
+      if (ifs.is_open()) {
+        IStreamWrapper isw(ifs);
+        doc.ParseStream(isw);
+        if (doc.HasParseError()) {
+          throw std::runtime_error("parse error");
         }
+      }
+    }
 
-        int ConfigLoader::getIntOrElse(const std::string& key, int def){
-            if(doc[key.c_str()].IsInt()){
-                return doc[key.c_str()].GetInt();
-            }else{
-                return def;
-            };
-        }
+    int ConfigLoader::getIntOrElse(const std::string& key, int def) {
+      if (doc[key.c_str()].IsInt()) {
+        return doc[key.c_str()].GetInt();
+      } else {
+        return def;
+      };
+    }
 
-        std::string ConfigLoader::getStringOrElse(const std::string& key, std::string def){
-            if(doc[key.c_str()].IsString()){
-                return doc[key.c_str()].GetString();
-            }else{
-                return def;
-            };
-        }
+    std::string ConfigLoader::getStringOrElse(const std::string& key,
+                                              std::string def) {
+      if (doc[key.c_str()].IsString()) {
+        return doc[key.c_str()].GetString();
+      } else {
+        return def;
+      };
+    }
 
-        bool ConfigLoader::getBoolOrElse(const std::string& key, bool def){
-            if(doc[key.c_str()].IsBool()){
-                return doc[key.c_str()].GetBool();
-            }else{
-                return def;
-            };
-        }
-    };
+    bool ConfigLoader::getBoolOrElse(const std::string& key, bool def) {
+      if (doc[key.c_str()].IsBool()) {
+        return doc[key.c_str()].GetBool();
+      } else {
+        return def;
+      };
+    }
+  };
 };  // namespace common
 
 #endif
