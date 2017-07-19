@@ -19,6 +19,9 @@ limitations under the License.
 
 namespace torii {
   namespace connection {
+
+    void receiver(const Transaction& tx);
+    void receiver(const Query& query);
     class ToriiServer {
 
     };

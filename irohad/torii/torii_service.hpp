@@ -19,6 +19,8 @@ limitations under the License.
 
 namespace torii {
 
+  void handle(const Transaction& tx);
+  void handle(const Query& query);
 
 }
 

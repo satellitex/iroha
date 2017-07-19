@@ -19,7 +19,11 @@ limitations under the License.
 
 namespace torii {
   namespace connection {
+
+    void send(std::string ip, const Transaction& tx);
+
     class ToriiClient {
+
 
     };
   }
