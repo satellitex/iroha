@@ -20,8 +20,14 @@
 
 namespace ametsuchi {
   namespace context {
-    class Context {
 
+    class Context {
+    public:
+      SelfStatus self_;
+      std::vector<uint8_t> permutation_;
+      std::vector<uint8_t> ordering_peers_;
+      std::vector<uint8_t> active_ordering_peers_;
+      std::vector<std::shared_ptr<Peer>> peers_;
     };
   }
 }

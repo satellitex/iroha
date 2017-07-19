@@ -18,8 +18,29 @@
 #ifndef AMETSUCHI_AMETSUCHI_HPP
 #define AMETSUCHI_AMETSUCHI_HPP
 
+#include<vector>
+
+#include <ametsuchi/block_store/block_store.hpp>
+#include <ametsuchi/context/context.hpp>
+#include <ametsuchi/wsv/wsv.hpp>
+
 namespace ametsuchi {
 
+  // Command
+  bool append(Block block);
+  bool commit();
+
+  // Hash
+  bool getRootHash();
+
+  // Query
+  QueryResponse getQuery(Query query);
+
+  // Temporary
+  TemporaryWSV temporaryWSV();
+
+  // Context
+  Context& context();
 }
 
 

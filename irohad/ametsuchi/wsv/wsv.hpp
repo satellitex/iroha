@@ -18,31 +18,36 @@
 #ifndef AMETSUCHI_WSV_WSV_HPP
 #define AMETSUCHI_WSV_WSV_HPP
 
+#include <ametsuchi/wrapper/rdb_wrapper.hpp>
 #include <cstdint>
 #include <string>
 #include <vector>
+
 namespace ametsuchi {
 
   namespace wsv {
 
     class WSV {
      public:
-      virtual bool add_account(std::string account_id, uint8_t quorum,
-                               uint32_t status) = 0;
-      virtual bool add_peer(const std::string &account_id,
-                            const std::string &address, uint32_t state) = 0;
-      virtual bool add_signatory(const std::string &account_id,
-                                 const std::string &public_key) = 0;
 
-      virtual std::vector<std::string> get_peers(bool committed) = 0;
+      bool append(Transaction tx);
+      bool commit();
+      bool rollback();
 
-      virtual void commit_transaction() = 0;
+      // temporaryWSV  return snapshot;
+      WSV temporaryWSV();
 
-      virtual void commit_block() = 0;
+      // Get Series
+      Account getAccount(std::string account_uuid);
+      Asset getAsset(std::string asset_uuid);
+      std::vector<Asset> getAssets(std::string domain);
+      Wallet getWallet(std::string account_uuid, std::string asset_uuid);
+      AssetPermission getAssetPermission(std::string account_uuid, std::string asset_uuid);
+      DomainPermission getDomainPermission(std::string account_uuid, std::string domain);
+      std::vector<Peer> getPeers();
 
-      virtual void rollback_transaction() = 0;
-
-      virtual void rollback_block() = 0;
+     private:
+      RDBWrapper db_;
     };
 
   }  // namespace wsv

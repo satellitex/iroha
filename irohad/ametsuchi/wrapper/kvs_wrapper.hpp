@@ -15,36 +15,15 @@
  * limitations under the License.
  */
 
-#ifndef AMETSUCHI_BLOCK_STORE_BLOCK_STORE_HPP
-#define AMETSUCHI_BLOCK_STORE_BLOCK_STORE_HPP
+#ifndef IROHA_AMETSUCHI_WRAPPER_KVS_WRAPPER_HPP
+#define IROHA_AMETSUCHI_WRAPPER_KVS_WRAPPER_HPP
 
-#include <cstdint>
-#include <vector>
+namespace ametsuchi {
+  namespace wrapper {
+    class KVSWrapper {
 
-#include <ametsuchi/wrapper/kvs_wrapper.hpp>
+    };
+  }
+}
 
-namespace iroha {
-
-  namespace ametsuchi {
-
-    namespace block_store {
-
-      class BlockStore {
-       public:
-        void append(const Block& block);
-        const Block& last_block();
-
-
-        // 未定
-        std::vector<Transaction> getTransactions() const;
-
-
-       private:
-        KVSWrapper db_;
-      };
-
-    }  // namespace block_store
-
-  }  // namespace ametsuchi
-}  // namespace iroha
-#endif  // AMETSUCHI_BLOCK_STORE_BLOCK_STORE_HPP
+#endif //IROHA_AMETSUCHI_WRAPPER_KVS_WRAPPER_HPP
