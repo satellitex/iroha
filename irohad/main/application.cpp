@@ -18,4 +18,17 @@ limitations under the License.
 
 Irohad::Irohad() {}
 
-void Irohad::run() {}
+void Irohad::run() {
+
+
+  // read config
+
+  // initailzie ametsuchi and peer service
+
+  // send Genesis Transaction to leader peer
+
+  // start Torii
+
+
+
+}
