@@ -26,14 +26,8 @@ namespace validator {
      */
     class StatelessValidator {
      public:
-      /**
-       * Perform stateless validator on a given transaction
-       * @param transaction transaction to be validated
-       * @return true if given transaction is valid, false otherwise
-       */
-      virtual bool validate(const model::Transaction &transaction) const = 0;
-
-      virtual ~StatelessValidator() = default;
+      StatelessValidator();
+      bool validate(const Transaction &tx);
     };
   }
 }  // namespace validator

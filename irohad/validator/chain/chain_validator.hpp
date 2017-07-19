@@ -31,20 +31,8 @@ namespace validator {
      */
     class ChainValidator {
      public:
-      /**
-       * Validate method provide chain validator for application it to ledger.
-       *
-       * Chain validator assumes that all signatures of new blocks will be
-       * valid
-       * and valid related meta information such as previous hash, height and
-       * other meta information
-       * @param blocks - observable with all blocks, that should be applied
-       * simultaneously
-       * @param storage - storage that may be modified during loading
-       * @return true if commit is valid, false otherwise
-       */
-      virtual bool validate(rxcpp::observable<model::Block> &blocks,
-                            ametsuchi::MutableStorage &storage) = 0;
+      ChainValidator(const BlockStore& blockStore);
+      bool validate(const Block& block);
     };
   }  // namespace validator
 }  // namespace iroha

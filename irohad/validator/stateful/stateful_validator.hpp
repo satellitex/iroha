@@ -27,20 +27,8 @@ namespace validator {
      */
     class StatefulValidator {
      public:
-      virtual ~StatefulValidator() = default;
-
-      /**
-       * Function perform stateful validator on proposal
-       * and return proposal with valid transactions
-       * @param proposal - proposal for validator
-       * @param wsv  - temporary wsv for validator,
-       * this wsv not affected on ledger,
-       * all changes after removing wsv will be ignored
-       * @return proposal with valid transactions
-       */
-      virtual model::Proposal validate(
-          const model::Proposal& proposal,
-          ametsuchi::TemporaryWsv& temporaryWsv) = 0;
+      StatefulValidator(const WSV& wsv);
+      bool validate(const Transaction& tx);
     };
   }  // namespace validator
 }  // namespace iroha
