@@ -18,14 +18,105 @@ limitations under the License.
 #define IROHA_PEER_SERVICE_PEER_SERVIEC_HPP
 
 #include <algorithm>
-#include <datetime/time.hpp>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
-#include <cmath>
+
+#include <commands.pb.h>
+#include <model/block.hpp>
+#include <model/peer.hpp>
+#include <peer_service/self_status.hpp>
 
 namespace peer_service {
 
+  using Peer = iroha::model::Peer;
+  using Command = iroha::protocol::Command;
+
+  void initialize();
+
+  /**
+   * @return List of peers that therefore permutation.
+   */
+  std::vector<std::shared_ptr<Peer>> getPermutationPeers();
+
+  /**
+   * @param i index
+   * @return A i-th peer that therefore permutation.
+   */
+  std::shared_ptr<Peer> getPermutationAt(int i);
+
+  /**
+   * @return List of peers that is used by ordering service.
+   */
+  std::vector<std::shared_ptr<Peer>> getOrderingPeers();
+
+  /**
+   * @return List of peers that is used by ordering service and is that will
+   * be send sumeragi.
+   */
+  std::vector<std::shared_ptr<Peer>> getActiveOrderingPeers();
+
+  /**
+   * @return self status
+   */
+  const SelfStatus& self();
+
+  /**
+   * When on_porposal sends on_commit, it is called.
+   * It check signs from Block, and identify dead peers which It throw to
+   * issue Peer::Remove transaction.
+   * @param commited_block commited block with signs
+   */
+  void RemoveDeadPeers(const iroha::model::Block& commited_block);
+
+  /**
+   * When on_commit, it is called.
+   * It change peer oreder.
+   */
+  void changePermutation();
+
+  /**
+   * When commit fails, it is called.
+   * It throw to issue Peer::Stop(Self) transaction.
+   */
+  void selfStop();
+
+  /**
+   * When commit successes and state of self peer is UnSynced, It is called.
+   * It throw to issue Peer::Activate(self) transaction.
+   */
+  void selfActivate();
+
+  /**
+   * validate command
+   */
+  void validate(const Command::Peer::Add&);
+  void validate(const Command::Peer::Remove&);
+  void validate(const Command::Peer::Activate&);
+  void validate(const Command::Peer::Stop&);
+  void validate(const Command::Peer::ChangeRole&);
+
+  /**
+   * execute command
+   */
+  void execute(const Command::Peer::Add&);
+  void execute(const Command::Peer::Remove&);
+  void execute(const Command::Peer::Activate&);
+  void execute(const Command::Peer::Stop&);
+  void execute(const Command::Peer::ChangeRole&);
+
+
+  /**
+   * return 1/3 of active(synced) peers
+   * @return max faulty
+   */
+  size_t getMaxFaulty();
+
+  namespace detail {
+    void issueStop(const std::string& ip, const Peer& stop_peer);
+    void issueActivate(const std::string& ip, const Peer& activate_peer);
+  }
 
 }  // namespace peer_service
 
