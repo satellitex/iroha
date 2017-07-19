@@ -11,28 +11,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef CONSENSUS_CONNECTION_CLIENT_HPP
-#define CONSENSUS_CONNECTION_CLIENT_HPP
+#ifndef CONSENSUS_CONNECTION_SERVER_HPP
+#define CONSENSUS_CONNECTION_SERVER_HPP
 
-#include <grpc++/grpc++.h>
-#include <memory>
-#include <block.pb.h>
-#include <endpoint.pb.h>
 #include <endpoint.grpc.pb.h>
+#include <endpoint.pb.h>
 
 namespace consensus {
   namespace connection {
 
-    class SumeragiClient {
+    void receive(const std::function<void(const iroha::protocol::Block&)>&);
+
+    class SumeragiService final
+      : public iroha::protocol::SumeragiService::Service {
     public:
-      SumeragiClient(const std::string& ip, int port);
-      iroha::protocol::VerifyResponse Verify(const iroha::protocol::Block&);
-    private:
-      grpc::ClientContext context_;
-      std::unique_ptr<iroha::protocol::SumeragiService::Stub> stub_;
+      grpc::Status Verify(
+        grpc::ServerContext* context, const ::iroha::protocol::Block* request,
+        iroha::protocol::VerifyResponse* response);
     };
 
   }  // namespace connection
 }  // namespace consensus
 
-#endif // CONSENSUS_CONNECTION_CLIENT_HPP
+#endif // CONSENSUS_CONNECTION_SERVICE_HPP

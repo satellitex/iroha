@@ -21,33 +21,31 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-namespace iroha {
-  namespace ametsuchi {
+namespace ametsuchi {
 
-    namespace wsv {
+  namespace wsv {
 
-      class WSV {
-       public:
-        virtual bool add_account(std::string account_id, uint8_t quorum,
-                                 uint32_t status) = 0;
-        virtual bool add_peer(const std::string &account_id,
-                              const std::string &address, uint32_t state) = 0;
-        virtual bool add_signatory(const std::string &account_id,
-                                   const std::string &public_key) = 0;
+    class WSV {
+     public:
+      virtual bool add_account(std::string account_id, uint8_t quorum,
+                               uint32_t status) = 0;
+      virtual bool add_peer(const std::string &account_id,
+                            const std::string &address, uint32_t state) = 0;
+      virtual bool add_signatory(const std::string &account_id,
+                                 const std::string &public_key) = 0;
 
-        virtual std::vector<std::string> get_peers(bool committed) = 0;
+      virtual std::vector<std::string> get_peers(bool committed) = 0;
 
-        virtual void commit_transaction() = 0;
+      virtual void commit_transaction() = 0;
 
-        virtual void commit_block() = 0;
+      virtual void commit_block() = 0;
 
-        virtual void rollback_transaction() = 0;
+      virtual void rollback_transaction() = 0;
 
-        virtual void rollback_block() = 0;
-      };
+      virtual void rollback_block() = 0;
+    };
 
-    }  // namespace wsv
+  }  // namespace wsv
 
-  }  // namespace ametsuchi
-}  // namespace iroha
+}  // namespace ametsuchi
 #endif  // AMETSUCHI_WSV_WSV_HPP

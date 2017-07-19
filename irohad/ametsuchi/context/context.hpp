@@ -15,18 +15,15 @@
  * limitations under the License.
  */
 
-#ifndef IROHA_ORDERING_SERVICE_HPP
-#define IROHA_ORDERING_SERVICE_HPP
+#ifndef AMETSUCHI_CONTEXT_CONTEXT_HPP
+#define AMETSUCHI_CONTEXT_CONTEXT_HPP
 
-#include <model/transaction.hpp>
-#include <model/proposal.hpp>
-#include <rxcpp/rx-observable.hpp>
+namespace ametsuchi {
+  namespace context {
+    class Context {
 
-namespace iroha {
-  namespace ordering {
+    };
+  }
+}
 
-
-  }//namespace ordering
-}// namespace iroha
-
-#endif //IROHA_ORDERING_SERVICE_HPP
+#endif //IROHA_CONTEXT_HPP

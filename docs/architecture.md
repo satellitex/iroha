@@ -33,7 +33,7 @@
 │   ├── server
 │   ├── service
 │   ├── util
-│   ├── validation
+│   ├── validator
 │   └── vendor
 │       ├── Cappucino
 │       ├── ed25519
@@ -102,7 +102,7 @@ It contains main.
 ├── server
 ├── smart_contract
 ├── util
-└── validation
+└── validator
 ```
 
 We adopt a **Domain-Driven Development structure** as much as possible.
