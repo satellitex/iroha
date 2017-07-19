@@ -18,8 +18,13 @@ See the License for the specific language governing permissions and
 #ifndef IROHA_SIMULATOR_SIMULATOR_HPP
 #define IROHA_SIMULATOR_SIMULATOR_HPP
 
+
+#include <validator/stateful/stateful_validator.hpp>
+
 namespace simulator {
 
+  Proposal simulate(Proposal proposal);
+  
 }
 
 #endif //IROHA_SIMULATOR_SIMULATOR_HPP
