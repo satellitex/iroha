@@ -20,9 +20,20 @@ See the License for the specific language governing permissions and
 namespace synchronizer {
   namespace connection {
     class SyncClient {
-
+      /**
+       * Method requests missed blocks from external peer starting from it's top
+       * block.
+       * Note, that blocks will be in order: from the newest
+       * to your actual top block.
+       * This order is required for verify blocks before storing in a ledger.
+       * @param target_ip - peer's ip for requesting blocks
+       * @param offset - your last actual block's height
+       * @return observable with blocks
+       */
+      rxcpp::observable<Block> fetchBlocks(std::string target_ip,
+                                           uint64_t offset);
     };
   }
 }
 
-#endif //IROHA_SYNCHRONIZER_CONNECTION_SYNC_CLIENT_HPP
+#endif  // IROHA_SYNCHRONIZER_CONNECTION_SYNC_CLIENT_HPP

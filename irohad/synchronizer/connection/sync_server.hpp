@@ -20,9 +20,14 @@ See the License for the specific language governing permissions and
 namespace synchronizer {
   namespace connection {
     class SyncServer {
-
+      /**
+       * This method is return response Blocks;
+       * @param return_ip - peer's ip to return for responseblocks
+       * @param offset - your return blocks after offset-th.
+       */
+      void responseBlocks(std::string return_ip, uint64_t offset);
     };
   }
 }
 
-#endif //IROHA_SYNCHRONIZER_CONNECTION_SYNC_SEVER_HPP
+#endif  // IROHA_SYNCHRONIZER_CONNECTION_SYNC_SEVER_HPP
