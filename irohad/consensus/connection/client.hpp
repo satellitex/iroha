@@ -23,10 +23,16 @@ limitations under the License.
 namespace consensus {
   namespace connection {
 
+    VerifyResponse sendBlock(
+        const Block& block, const std::string& targetPeerIp);
+
     class SumeragiClient {
     public:
-      void send(std::string ip, const Block& block);
+      SumeragiClient(const std::string& ip, int port);
+      VerifyResponse Verify(const Block&);
     private:
+      grpc::ClientContext context_;
+      std::unique_ptr<SumeragiService::Stub> stub_;
     };
 
   }  // namespace connection

@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef CONSENSUS_CONNECTION_SERVER_HPP
-#define CONSENSUS_CONNECTION_SERVER_HPP
+#ifndef CONSENSUS_CONNECTION_SERVICE_HPP
+#define CONSENSUS_CONNECTION_SERVICE_HPP
 
 #include <endpoint.grpc.pb.h>
 #include <endpoint.pb.h>
@@ -20,10 +20,14 @@ limitations under the License.
 namespace consensus {
   namespace connection {
 
+    void receive(const std::function<void(const Block&)>&);
 
-    class SumeragiServer {
+    class SumeragiService final
+        : public SumeragiService::Service {
     public:
-      receive(const Block& block);
+      grpc::Status Verify(
+          grpc::ServerContext* context, const ::Block* request,
+          VerifyResponse* response);
     };
 
   }  // namespace connection

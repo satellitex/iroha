@@ -15,18 +15,41 @@
  * limitations under the License.
  */
 
-#ifndef IROHA_ORDERING_SERVICE_HPP
-#define IROHA_ORDERING_SERVICE_HPP
+#ifndef IROHA_ORDEIRNG_ORDERING_SERVICE_HPP
+#define IROHA_ORDEIRNG_ORDERING_SERVICE_HPP
 
-#include <model/transaction.hpp>
-#include <model/proposal.hpp>
-#include <rxcpp/rx-observable.hpp>
+#include <queue>
+#include <block.pb.h>
 
-namespace iroha {
-  namespace ordering {
+namespace ordering_service {
 
+  using Transaction = iroha::protocol::Transaction;
+  using Block = iroha::protocol::Block;
 
-  }//namespace ordering
-}// namespace iroha
+  struct TransactionComparator
+      : public std::binary_function<Transaction, Transaction, bool> {
+    bool operator()(const Transaction& lhs, const Transaction& rhs) const {
+      return lhs.header().created_time() < rhs.header().created_time();
+    }
+  };
 
-#endif //IROHA_ORDERING_SERVICE_HPP
+  /**
+   * append to ordering queue
+   */
+  void append(Transaction&);
+
+  /**
+   * on_commit, start ordering
+   */
+  void on_commit(Block&);
+
+  namespace detail {
+
+    void initialize(const Block&);
+    Block makeBlock();
+
+    static std::priority_queue<Transaction,std::vector<Transaction>,TransactionComparator> que_;
+  }
+}  // namespace ordering
+
+#endif  // IROHA_ORDEIRNG_ORDERING_SERVICE_HPP
