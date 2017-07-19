@@ -16,11 +16,6 @@ limitations under the License.
 
 #include <main/application.hpp>
 
-Irohad::Irohad():
-  context(new Context())
-{}
+Irohad::Irohad() {}
 
-void Irohad::run(){
-
-
-}
+void Irohad::run() {}

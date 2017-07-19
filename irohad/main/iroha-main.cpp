@@ -17,7 +17,6 @@ limitations under the License.
 #include <main/application.hpp>
 
 int main(int argc, char *argv[]) {
-
   auto irohad = Irohad();
   irohad.run();
 

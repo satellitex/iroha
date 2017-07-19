@@ -17,33 +17,11 @@
 #ifndef IROHA_APPLICATION_HPP
 #define IROHA_APPLICATION_HPP
 
-#include <main/context.hpp>
-#include <network/network_api.h>
-#include <consensus/connection/server.hpp>
-#include <consensus/consensus_service_stub.hpp>
-#include <network/peer_communication_stub.hpp>
-#include <ordering/ordering_service_stub.hpp>
-#include <torii/processor/query_processor_stub.hpp>
-#include <torii/processor/transaction_processor_impl.hpp>
-#include <torii/torii_stub.hpp>
-#include <validator/chain/validator_stub.hpp>
-#include <validator/stateless/validator_impl.hpp>
+class Irohad {
+ public:
+  Irohad();
 
-#include <model/model_crypto_provider_impl.hpp>
-#include <crypto/crypto.hpp>
-#include <ametsuchi/impl/storage_impl.hpp>
-
-#include <main/server_runner.hpp>
-
-
-class Irohad{
-  public:
-    std::shared_ptr<Context> context;
-
-    Irohad();
-
-    void run();
-
+  void run();
 };
 
-#endif //IROHA_APPLICATION_HPP
+#endif  // IROHA_APPLICATION_HPP
