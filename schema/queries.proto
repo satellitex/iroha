@@ -1,33 +1,56 @@
 syntax = "proto3";
 package iroha.protocol;
+import "block.proto";
 
-message GetAccount {
-  string account_id = 1;
-}
+message Query {
+  Header header = 1;
 
-message GetSignatories {
-  string account_id = 1;
-}
+  message Meta {
+    bytes creator_pubkey = 1;
+    // used to prevent replay attacks.
+    uint64_t nonce = 2;
+  }
 
-message GetAccountTransactions {
-  string account_id = 1;
-}
+  // META
+  Meta meta = 2;
 
-message GetAccountAssetTransactions{
-  string account_id = 1;
-  string asset_id = 2;
-}
-
-message GetAccountAssets{
-  string account_id = 1;
+  // BODY
+  repeated Query queries = 3;
 }
 
 message Query {
+  message Asset {
+    message Get {
+      string asset_id = 1;
+    }
+    message GetTransactions {
+      string asset_id = 1;
+    }
+  }
+
+  message Account {
+    message GetTransactions {
+      string account_id = 1;
+    }
+    message GetAssetTransactions {
+      string asset_id = 1;
+    }
+
+    oneof query {
+      GetTransactions get_transactions = 1;
+      GetAssetTransactions get_asset_transactions = 2;
+    }
+  }
+
+  message Domain {
+    message GetAccount {
+      string account_id = 1;
+    }
+  }
 
   oneof query {
-    GetAccount get_account = 1;
-    GetSignatories get_account_signatories = 2;
-    GetAccountTransactions get_account_transactions = 3;
-    GetAccountAssets get_account_assets = 4;
+    Asset asset = 1;
+    Account account = 2;
+    Domain domain = 3;
   }
 }
